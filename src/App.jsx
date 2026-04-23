@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DEMO_ORDERS } from './constants'
 import Navbar      from './components/Navbar'
 import Home        from './components/Home'
@@ -27,7 +27,11 @@ export default function App() {
     setAdminSecret(null)
     setPage('home')
   }
-
+useEffect(() => {
+  if (window.location.hash === '#admin-mukesh') {
+    setPage('adminlogin')
+  }
+}, [])
   const showNavbar = page !== 'adminlogin' && page !== 'admin'
 
   return (
