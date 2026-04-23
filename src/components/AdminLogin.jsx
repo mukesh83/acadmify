@@ -1,58 +1,63 @@
 import { useState } from 'react'
-import { adminLogin } from '../utils/api.js'
-import { C } from '../constants'
-import { mono, serif, inputStyle, btn } from '../utils/styles'
+import { C, ADMIN_PASSWORD } from '../constants'
+import { mono, serif, inputStyle, labelStyle, btn, cardStyle } from '../utils/styles'
 
 export default function AdminLogin({ onLogin }) {
-  const [pw,      setPw]      = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState(null)
+  const [pw,  setPw]  = useState('')
+  const [err, setErr] = useState(false)
 
-  const tryLogin = async () => {
-    if (!pw.trim()) return
-    setLoading(true)
-    setError(null)
-
-    try {
-      // Validate by hitting a protected admin endpoint with the secret
-      await adminLogin(pw.trim())
-      onLogin(pw.trim())  // pass secret up so Admin panel can use it
-    } catch {
-      setError('Incorrect password or server unreachable')
-    } finally {
-      setLoading(false)
+  const tryLogin = () => {
+    if (pw.trim() === ADMIN_PASSWORD) {
+      onLogin(pw.trim())
+      setErr(false)
+    } else {
+      setErr(true)
     }
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.dark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 340, background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '2.25rem' }}>
+    <div style={{ minHeight: '100vh', background: C.gray1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 380, ...cardStyle, padding: '2.5rem' }}>
 
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
-          <div style={{ fontSize: 32, marginBottom: '0.5rem' }}>🔐</div>
-          <h2 style={{ ...serif, fontSize: '1.7rem', color: C.cream, marginBottom: '0.2rem' }}>Admin Access</h2>
-          <div style={{ ...mono, fontSize: '0.65rem', color: C.muted }}>Acadmify Operations Panel</div>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'rgba(122,30,30,0.08)',
+            border: `1.5px solid ${C.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 1rem', fontSize: 22,
+          }}>🔐</div>
+          <h2 style={{ ...serif, fontSize: '1.9rem', fontWeight: 600, color: C.maroon, marginBottom: '0.25rem' }}>
+            Admin Access
+          </h2>
+          <p style={{ ...serif, fontSize: '0.95rem', color: C.textMuted }}>Acadmify Operations Panel</p>
         </div>
 
-        <label style={{ display: 'block', ...mono, fontSize: '0.7rem', color: C.gold, marginBottom: 6 }}>
-          PASSWORD
-        </label>
+        <label style={labelStyle}>Password</label>
         <input
           type="password"
           value={pw}
-          onChange={e => setPw(e.target.value)}
+          onChange={e => { setPw(e.target.value); setErr(false) }}
           onKeyDown={e => e.key === 'Enter' && tryLogin()}
-          placeholder="Admin password"
-          style={{ ...inputStyle, border: `1px solid ${error ? '#E74C3C' : C.border}`, marginBottom: error ? 4 : 12 }}
+          placeholder="Enter admin password"
+          style={{ ...inputStyle, border: `1.5px solid ${err ? '#C0392B' : C.border}`, marginBottom: err ? 4 : 14 }}
         />
-        {error && (
-          <div style={{ ...mono, fontSize: '0.65rem', color: '#E74C3C', marginBottom: 10 }}>{error}</div>
+        {err && (
+          <div style={{ ...mono, fontSize: '0.65rem', color: '#C0392B', marginBottom: 12 }}>
+            Incorrect password. Please try again.
+          </div>
         )}
 
-        <button onClick={tryLogin} disabled={loading}
-          style={{ ...btn(loading ? 'rgba(201,168,76,0.4)' : C.gold), width: '100%' }}>
-          {loading ? 'Verifying…' : 'Login'}
+        <button
+          onClick={tryLogin}
+          style={{ ...btn('primary'), width: '100%' }}
+        >
+          Sign In
         </button>
+
+        <div style={{ textAlign: 'center', marginTop: '1rem', ...mono, fontSize: '0.62rem', color: C.textMuted }}>
+          Password set in src/constants/index.js
+        </div>
       </div>
     </div>
   )
