@@ -42,23 +42,6 @@ export default function Navbar({ page, setPage, adminIn }) {
             {label}
           </span>
         ))}
-
-        <span
-          onClick={() => setPage(adminIn ? 'admin' : 'adminlogin')}
-          style={{
-            ...mono,
-            cursor: 'pointer',
-            fontSize: '0.7rem',
-            letterSpacing: '0.05em',
-            color: '#fff',
-            background: C.maroon,
-            padding: '7px 16px',
-            borderRadius: 3,
-            transition: 'opacity 0.15s',
-          }}
-        >
-          {adminIn ? 'Admin Panel' : 'Admin'}
-        </span>
       </div>
     </nav>
   )
