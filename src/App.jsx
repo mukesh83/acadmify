@@ -11,8 +11,14 @@ export default function App() {
   const [page,        setPage]        = useState('home')
   const [adminIn,     setAdminIn]     = useState(false)
   const [adminSecret, setAdminSecret] = useState(null)
-  // Local orders state acts as a cache / demo fallback
   const [orders,      setOrders]      = useState(DEMO_ORDERS)
+
+  // Secret URL access — visit acadmify.com/#admin-mukesh to open admin
+  useEffect(() => {
+    if (window.location.hash === '#admin-mukesh') {
+      setPage('adminlogin')
+    }
+  }, [])
 
   const addOrder = order => setOrders(prev => [order, ...prev])
 
@@ -35,13 +41,11 @@ useEffect(() => {
   const showNavbar = page !== 'adminlogin' && page !== 'admin'
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0F0507', color: '#F0E8D8' }}>
+    <div style={{ minHeight: '100vh', background: '#FFFFFF', color: '#4A1A1A' }}>
       {showNavbar && <Navbar page={page} setPage={setPage} adminIn={adminIn} />}
-
       {page === 'home'       && <Home setPage={setPage} />}
       {page === 'upload'     && <Upload setPage={setPage} addOrder={addOrder} />}
       {page === 'track'      && <Track orders={orders} />}
-
       {page === 'adminlogin' && <AdminLogin onLogin={handleAdminLogin} />}
       {page === 'admin' && adminIn && (
         <Admin
