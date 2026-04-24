@@ -1,5 +1,5 @@
 import { C } from '../constants'
-import { mono, serif, btn, DividerDots } from '../utils/styles'
+import { mono, serif, btn } from '../utils/styles'
 import { useContent } from '../hooks/useContent.js'
 
 const UNIVERSITIES = [
@@ -82,7 +82,11 @@ export default function Home({ setPage }) {
             {c('hero_title')}<br />
             <em style={{ fontWeight: 400, fontStyle: 'italic' }}>{c('hero_subtitle')}</em>
           </h1>
-          <DividerDots />
+         <div style={{ display:'flex', alignItems:'center', gap:10, margin:'0.5rem 0 1.5rem' }}>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+  <span style={{ color:'#C69A4A', fontSize:10, letterSpacing:8 }}>◆ ◆ ◆</span>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+</div>
           <p style={{ ...serif, fontSize: '1.2rem', color: C.textBody, lineHeight: 1.9, maxWidth: 620, marginBottom: '2.5rem' }}>
             {c('hero_description')}
           </p>
@@ -114,7 +118,11 @@ export default function Home({ setPage }) {
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>About Us</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>{c('about_heading')}</h2>
-          <DividerDots />
+          <div style={{ display:'flex', alignItems:'center', gap:10, margin:'0.5rem 0 1.5rem' }}>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+  <span style={{ color:'#C69A4A', fontSize:10, letterSpacing:8 }}>◆ ◆ ◆</span>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+</div>
           <p style={{ ...serif, fontSize: '1.15rem', color: C.textBody, lineHeight: 1.9, marginBottom: '1.25rem' }}>{c('about_para1')}</p>
           <p style={{ ...serif, fontSize: '1.15rem', color: C.textBody, lineHeight: 1.9, marginBottom: '2rem' }}>{c('about_para2')}</p>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -135,7 +143,11 @@ export default function Home({ setPage }) {
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Why Researchers Choose Acadmify</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>Built for Academic Excellence</h2>
-          <DividerDots />
+          <div style={{ display:'flex', alignItems:'center', gap:10, margin:'0.5rem 0 1.5rem' }}>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+  <span style={{ color:'#C69A4A', fontSize:10, letterSpacing:8 }}>◆ ◆ ◆</span>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(235px,1fr))', gap: '1.5rem' }}>
             {[
               ['Archival Print Quality',         'Every thesis is printed on acid-free, 70gsm bond paper using high-resolution 600dpi laser printing. Your research is preserved as it deserves — for decades.'],
@@ -157,7 +169,11 @@ export default function Home({ setPage }) {
         <div style={{ maxWidth: 920, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Gallery</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>Universities We Have Served</h2>
-          <DividerDots />
+          <div style={{ display:'flex', alignItems:'center', gap:10, margin:'0.5rem 0 1.5rem' }}>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+  <span style={{ color:'#C69A4A', fontSize:10, letterSpacing:8 }}>◆ ◆ ◆</span>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1.25rem' }}>
             {UNIVERSITIES.map(({ name, img }) => (
               <div key={name} style={{ borderRadius: 6, overflow: 'hidden', border: `1px solid ${C.border}`, background: C.white }}>
@@ -177,7 +193,11 @@ export default function Home({ setPage }) {
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>The Process</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>From Upload to Doorstep in 5 Steps</h2>
-          <DividerDots />
+          <div style={{ display:'flex', alignItems:'center', gap:10, margin:'0.5rem 0 1.5rem' }}>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+  <span style={{ color:'#C69A4A', fontSize:10, letterSpacing:8 }}>◆ ◆ ◆</span>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+</div>
           {[
             ['Upload',     'Share your thesis PDF and optional cover page through our secure portal. All files are encrypted and accessible only to our printing team.'],
             ['Configure',  'Select binding type — hardbound, softbound, or spiral. Choose your cover colour. Specify number of copies required.'],
@@ -201,7 +221,11 @@ export default function Home({ setPage }) {
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Pricing Schedule</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>{c('pricing_heading')}</h2>
-          <DividerDots />
+          <div style={{ display:'flex', alignItems:'center', gap:10, margin:'0.5rem 0 1.5rem' }}>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+  <span style={{ color:'#C69A4A', fontSize:10, letterSpacing:8 }}>◆ ◆ ◆</span>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', ...serif, fontSize: '1rem' }}>
             <thead>
               <tr style={{ borderBottom: `2px solid ${C.maroon}` }}>
@@ -255,7 +279,11 @@ export default function Home({ setPage }) {
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Helpful Resources</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>Thesis Formatting Guides</h2>
-          <DividerDots />
+          <div style={{ display:'flex', alignItems:'center', gap:10, margin:'0.5rem 0 1.5rem' }}>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+  <span style={{ color:'#C69A4A', fontSize:10, letterSpacing:8 }}>◆ ◆ ◆</span>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+</div>
           <p style={{ ...serif, fontSize: '1.1rem', color: C.textBody, lineHeight: 1.85, marginBottom: '2rem' }}>
             Watch our YouTube tutorials on thesis formatting, margin settings, binding selection,
             and university-specific requirements — made specifically for Indian research scholars.
@@ -294,7 +322,11 @@ export default function Home({ setPage }) {
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Find Us</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>Contact & Location</h2>
-          <DividerDots />
+          <div style={{ display:'flex', alignItems:'center', gap:10, margin:'0.5rem 0 1.5rem' }}>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+  <span style={{ color:'#C69A4A', fontSize:10, letterSpacing:8 }}>◆ ◆ ◆</span>
+  <span style={{ flex:1, height:1, background:'rgba(122,30,30,0.13)' }} />
+</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', alignItems: 'start' }}>
             <div>
               {[

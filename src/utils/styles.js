@@ -54,14 +54,3 @@ export const cardStyle = {
   padding: '2.25rem',
   boxShadow: '0 2px 16px rgba(122,30,30,0.06)',
 }
-
-// Decorative triple-dot divider — matches the logo tagline dots
-export function DividerDots() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0.5rem 0 1.5rem' }}>
-      <span style={{ flex: 1, height: 1, background: C.border }} />
-      <span style={{ color: '#C69A4A', fontSize: 10, letterSpacing: 8 }}>◆ ◆ ◆</span>
-      <span style={{ flex: 1, height: 1, background: C.border }} />
-    </div>
-  )
-}
