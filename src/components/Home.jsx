@@ -39,13 +39,13 @@ export default function Home({ setPage }) {
   const WA_URL = `https://wa.me/${c('contact_whatsapp_number')}?text=` +
     encodeURIComponent('Hello Acadmify! I want to get my thesis printed and bound. Please share the details.')
 
-  const pricingRows = [
-    ['Black & White Printing', `₹${c('pricing_bw')} / page`,   '70gsm acid-free bond, 600dpi laser, both sides'],
-    ['Colour Printing',        `₹${c('pricing_color')} / page`, '90gsm glossy coated, vivid full-colour reproduction'],
-    ['Hardbound Binding',      `₹${c('pricing_hard')} / copy`,  'Buckram cloth cover, gold foil title and spine stamping'],
-    ['Softbound Binding',      `₹${c('pricing_soft')} / copy`,  'Laminated cover, perfect-bound spine'],
-    ['Spiral Binding',         `₹${c('pricing_spiral')} / copy','Wire-o spiral, lay-flat opening'],
-    ['Delivery (Jodhpur)',     `₹${c('pricing_delivery')} flat`, `Free on orders above ₹${c('pricing_free_above')}`],
+ const pricingRows = [
+    ['Black & White Printing', '₹' + c('pricing_bw') + ' / page',     '70gsm acid-free bond, 600dpi laser, both sides'],
+    ['Colour Printing',        '₹' + c('pricing_color') + ' / page',   '90gsm glossy coated, vivid full-colour reproduction'],
+    ['Hardbound Binding',      '₹' + c('pricing_hard') + ' / copy',    'Buckram cloth cover, gold foil title and spine stamping'],
+    ['Softbound Binding',      '₹' + c('pricing_soft') + ' / copy',    'Laminated cover, perfect-bound spine'],
+    ['Spiral Binding',         '₹' + c('pricing_spiral') + ' / copy',  'Wire-o spiral, lay-flat opening'],
+    ['Delivery (Jodhpur)',     '₹' + c('pricing_delivery') + ' flat',   'Free on orders above ₹' + c('pricing_free_above')],
   ]
 
   const videos = [
