@@ -70,12 +70,12 @@ export default function Home({ setPage }) {
     '?text=' + encodeURIComponent('Hello Acadmify! I want to get my thesis printed and bound. Please share the details.')
 
   const pricingRows = [
-    ['Black & White Printing', 'Rs.' + c('pricing_bw') + ' / page',     '70gsm acid-free bond, 600dpi laser, both sides'],
-    ['Colour Printing',        'Rs.' + c('pricing_color') + ' / page',   '90gsm glossy coated, vivid full-colour reproduction'],
-    ['Hardbound Binding',      'Rs.' + c('pricing_hard') + ' / copy',    'Buckram cloth cover, gold foil title and spine stamping'],
-    ['Softbound Binding',      'Rs.' + c('pricing_soft') + ' / copy',    'Laminated cover, perfect-bound spine'],
-    ['Spiral Binding',         'Rs.' + c('pricing_spiral') + ' / copy',  'Wire-o spiral, lay-flat opening'],
-    ['Delivery (Jodhpur)',     'Rs.' + c('pricing_delivery') + ' flat',   'Free on orders above Rs.' + c('pricing_free_above')],
+    ['Black & White Printing', '₹2',   'per print',     '100gsm bond paper'],
+    ['Colour Printing',        '₹6-₹10',  'per print, depends on no. of pages',   '100gsm bond paper'],
+    ['Hardbound Binding',      '₹250', 'per copy',    'Thesis cover with spine printing'],
+    ['Softbound Binding',      '₹150', 'per copy',     'Cover printing optional'],
+    ['Spiral Binding',         '₹50', 'per copy',  'Spiral binding with plastic cover front & back'],
+    ['Delivery',     'Depends on Rapido parcel/ COD',   'Doorstep delivery anywhere in Rajasthan'],
   ]
 
   const videos = [
