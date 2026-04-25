@@ -70,12 +70,12 @@ export default function Home({ setPage }) {
     '?text=' + encodeURIComponent('Hello Acadmify! I want to get my thesis printed and bound. Please share the details.')
 
   const pricingRows = [
-    ['Black & White Printing', '₹2',   'per print',     '100gsm bond paper'],
-    ['Colour Printing',        '₹6-₹10',  'per print, depends on no. of pages',   '100gsm bond paper'],
-    ['Hardbound Binding',      '₹250', 'per copy',    'Thesis cover with spine printing'],
-    ['Softbound Binding',      '₹150', 'per copy',     'Cover printing optional'],
-    ['Spiral Binding',         '₹50', 'per copy',  'Spiral binding with plastic cover front & back'],
-    ['Delivery',     'Depends on Rapido parcel/ COD',   'Doorstep delivery anywhere in Rajasthan'],
+    ['Black & White Printing', '₹2 per print',     '100gsm bond paper'],
+    ['Colour Printing',        '₹6-₹10 per print', '100gsm bond paper, print rate depends on no. of pages & no. copies of thesis'],
+    ['Hardbound Binding',      '₹250 per copy',    'Thesis cover with spine printing'],
+    ['Softbound Binding',      '₹150 per copy',     'Cover printing optional'],
+    ['Spiral Binding',         '₹50 per copy',  'Spiral binding with plastic cover front & back'],
+    ['Delivery',     'Rapido parcel/ courier charges apply',   'Doorstep delivery anywhere in Rajasthan'],
   ]
 
   const videos = [
