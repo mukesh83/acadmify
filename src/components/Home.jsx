@@ -1,20 +1,18 @@
+import { useState, useEffect } from 'react'
 import { C } from '../constants'
 import { mono, serif, btn, dividerStyle } from '../utils/styles'
 import { useContent } from '../hooks/useContent.js'
 
-const UNIVERSITIES = [
-  { name: 'AIIMS Jodhpur',                 img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUCmq2iE7eiXcYlvZwVZUnpFp6bfzBJdoPQLcIlAePtg6dIqTHZwVA10n-2m9jXMAakdNCd7gP6CnzQf3xGC2kHOqC8KIi7NQSGiqCqjeeuvUsaRI5PH_6SKSnwZ5TgEjJdR1pXdcHw6PMeLjLV6QalyqzCsSoTTSLYuD-TntPd5L2sFkxu3Zqp9oe0I4anTNCJ3XQmlQGe1an2LYwpXfHD9pd4rdFmLrhPJDsY=w640' },
-  { name: 'IIT Jodhpur',                    img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUC8-wJmyfDEIhZJ0eHvdyqQAW4yDfEP1ok_zCvEV78f6VKbh4GzDxy4KrabLi9dhoSy8RYuWlCk_0kXRJiPqXUMbAd2pGdcM0iE04LB2YA4S8oTP2bKu4Y1cErKPobZh6M_sFtUVMhzhmVzJwdgdlzXtYmI-8VsRhiDtOUddwzP_c83FKfUYkOI0zki-57JI5WxxsIhEC15mD3z8SkZMjIE55DObGtWPmLy=w640' },
-  { name: 'Faculty of Law, JNVU',           img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUBimG1fqehk6TuHxJIU1LvgxPl3k1z7BaXTDw39yPlny7JvmoNnpiU-mON0FkuD3hu4vGAc46uLtIleBgxyNRhjaGsc9E568wrqwXGJTjq7Ut8FvosXS-nJvqEkzV8QcVoAd34D7TcfbN_9VfxKThsECnq0XbwEKmHQsM46fRHPYNT_4M3-M5ryxPfphpx8Ik2NhbOGeXFjewDwxM0GonqlMPMydAxsCXDQ=w640' },
-  { name: 'SN Medical College',             img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUAOsUxv0dywGFd5SFCOl7K08EaQax20nBSWNUBqn_Z6l9Tx-jPvaA08Y8BHCtJFB7b5ScjwcQUwQbfemfMVc9FEiO_1DgtLNDQ5iQVcxMvRjRZRv0b--aHKZHw81kxxM2Fe6k0LCfXwIEiyBZGC2ZHuSgLyiVpUXXqK-mX64Tb8hy3_P9AYSJn3N0fvQdZMcPoASLRu2eLuqlTLxVhQ2rWRZBBe_uq-xXWPlqo=w640' },
-  { name: 'Maulana Azad University',        img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUDmx9azNFXVoUG0-TK1iS3KHkuHD3bGl_xTtjuE1RHAj84ZnAic6VY0dB_KmMF4NJCQnS7jwGU1MrZ6TD3AeWhMDEVdc_8PcNDmNKjjEtjEtXrJqxAXRmJoAy_6NqiLv6E7aV8kvIjdBQA1O4YzEHLpkHV7v6kO2fRhpF_rL3g7R3hblLSdK2Lz74q7WV5x3nqe_0=w640' },
-  { name: 'Lachoo Memorial College',        img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUBRX_g7IdS6P13KfOW13_uouc8BbM7hEZo8deCndvcmypaZfmsSIvd4z5mRx0MKgcR9oWlnpYHta0vcqJu6y1bn_GR871JLQMZMlpsQJOIVEZxc27DqVlyOqvSE9WfpNcFJOWll5Rsaez8lDLxxMDbKvFOnT9nT54_zXVCJTTRFuiZV9pASemNz9auzxWxdkZDiqacoI4JpOCiuDFB0tdMPGKE69a_anRTU=w640' },
-  { name: 'School of Public Health, AIIMS', img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUDbKx9p-vd7VfmiIhjTqOcQeg1pW1gszsvEEGYgOXt4RBBaFVE2tcS7NqMNCbL7KlaFB884VQmsREClHlwhx5SrQ9HxjT3Wbo_ynOc3coESIDj5fcTieoKocuBj51ItMhGLjoDRAeYi5g-VeBuRU5AbZ0liPP7gdlM9wSxTbksppWvV2SCJKZKUddxxMjso5cH2T2Nn6YmT_ImjTpSKabrNeHHyd22pSfXm=w640' },
-  { name: 'Faculty of Commerce, JNVU',      img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUB-X34MkIUXKkx_6f_UWEWp-mZIGGkSUjn39CGKXzb81UJZV9_bqFkA4NfxBICHei-2CmxizmSNqjMuRsukUrATmqxqL1IyN1jdzndxQo6KsCIA_Y1xYxB564b_yK8hamjOy1Rcg4ForRf3i9K_AMaQJ6Zmby52KCDvj7mQK0PJ9i4ZL-s6UhJVZqFBCNqn1KgOsGuZlzXrT-FtnFKE2XVwOi9ub5VM57VYur4=w640' },
-  { name: 'JNVU Physics Dept.',             img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUDBDzQdeZHe0Nizbocxafl_VydJIjAco-03EAzxoje8WcfasgHaYPOpyitUeIpbhNeKtxhXM9pmRvC-0v65VG2c33PmrBldWHE8r8jXiQlDPVPG8m5_WojFA-9xLot0z_5KVmp-rxaCsPe7Dka0d5DcCorhbyquy6pRTwgQD5WFhRBGDb9YEh-IwXy8LFT2TtdeTPfYx3RMHKiUfU_8sHX4dKPzuS0kprveyIw=w640' },
-  { name: 'Mayurakshi College of Nursing',  img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUByLiNYo6e7GvYkApMFEQBU_39rzfNVW0u-iYKaZPKbzjZzr7paP_n2TtzVoIWS-Zax8WsTZMVHC6E7GUaicl7Qiu0qTFJwVupzVyzTgirAKMZhfPE_GLFOqdCxXbSFmVn7NMVLxiX2mGMLmal4-buRrH568-82-fqUL66pmtoZ6fjmArS0wDOF8etx7UnXJdfanisQUgunBlwTUvmmA2n-qYwZyWX-SXxy6Cw=w640' },
-  { name: 'FDDI Jodhpur',                   img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUBVi4bvmd8d-OAw0BHsN6ElBqJSxO92E-yHusTekFNDoXUjCrhVVQcoW89KrY3aSiDaXKXJef103eLs8Wph5wutSrlfxFJtEg1FBg1GHO90G3ktXFg6IjCHSyg9voWS1zX1AN_jc_58vF0FPP0IVBfhXjJ9wrVfEGMEIZzleR89kbcMoDS8je2lH8mZuawwsNcRPqml_hD9B6utlkOQEO9qSRlVlf5Gbec7=w640' },
-  { name: 'IGNOU',                          img: 'https://lh3.googleusercontent.com/sitesv/AA5AbUCqUqMUi50IpPvP8fjHM1Dy9TuYwlWsGO14jJCEle_mrggtyJvXiqc_THR7j_M1LfiZt_iCWSeI7NTTQ4Wg6HA0f7Qy85JLNpCKBHn8szOizAPDMpWTSX_tAesLqE4Ua9I84JWK3NUf8mUCfkVhplJeB3ZBC9ohElIFSqCI0p2b5U0PO7AWb8tWeiZzFDhg5riEvmGHKc=w640' },
+const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL      || ''
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+
+// Fallback gallery — shown when Supabase not connected
+// These are placeholder images that actually work
+const FALLBACK_GALLERY = [
+  { id:1,  name: 'AIIMS Jodhpur',                  image_url: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/AIIMS_Jodhpur_logo.png/200px-AIIMS_Jodhpur_logo.png' },
+  { id:2,  name: 'IIT Jodhpur',                     image_url: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/57/IIT_Jodhpur_Logo.svg/200px-IIT_Jodhpur_Logo.svg.png' },
+  { id:3,  name: 'JNVU Jodhpur',                    image_url: 'https://upload.wikimedia.org/wikipedia/en/thumb/1/14/JNVU_Logo.png/200px-JNVU_Logo.png' },
+  { id:4,  name: 'MBM University',                  image_url: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/MBM_Engineering_College_Logo.jpg/200px-MBM_Engineering_College_Logo.jpg' },
 ]
 
 function Divider() {
@@ -46,8 +44,30 @@ function YTIcon({ size = 20 }) {
 export default function Home({ setPage }) {
   const { c, loading } = useContent()
 
-  const waUrl = 'https://wa.me/' + c('contact_whatsapp_number') + '?text=' +
-    encodeURIComponent('Hello Acadmify! I want to get my thesis printed and bound. Please share the details.')
+  // Load gallery from Supabase
+  const [gallery, setGallery]     = useState([])
+  const [galleryLoading, setGL]   = useState(true)
+
+  useEffect(() => {
+    if (!SUPABASE_URL || !SUPABASE_ANON) {
+      setGallery(FALLBACK_GALLERY)
+      setGL(false)
+      return
+    }
+    fetch(SUPABASE_URL + '/rest/v1/gallery?select=*&active=eq.true&order=sort_order.asc', {
+      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+    })
+      .then(r => r.json())
+      .then(rows => {
+        if (Array.isArray(rows) && rows.length > 0) setGallery(rows)
+        else setGallery(FALLBACK_GALLERY)
+      })
+      .catch(() => setGallery(FALLBACK_GALLERY))
+      .finally(() => setGL(false))
+  }, [])
+
+  const waUrl = 'https://wa.me/' + c('contact_whatsapp_number') +
+    '?text=' + encodeURIComponent('Hello Acadmify! I want to get my thesis printed and bound. Please share the details.')
 
   const pricingRows = [
     ['Black & White Printing', 'Rs.' + c('pricing_bw') + ' / page',     '70gsm acid-free bond, 600dpi laser, both sides'],
@@ -66,21 +86,21 @@ export default function Home({ setPage }) {
 
   if (loading) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.8rem', color: C.textMuted }}>Loading...</div>
+      <div style={{ ...mono, fontSize: '0.8rem', color: C.textMuted }}>Loading...</div>
     </div>
   )
 
   return (
     <div style={{ position: 'relative' }}>
 
-      {/* Floating WhatsApp Button */}
+      {/* ── Floating WhatsApp Button ─────────────────────────────────── */}
       <a href={waUrl} target="_blank" rel="noreferrer"
-        style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 999, background: '#25D366', color: '#fff', width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(37,211,102,0.4)', textDecoration: 'none' }}
-        title="WhatsApp Acadmify">
+        style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 999, background: '#25D366', color: '#fff', width: 58, height: 58, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(37,211,102,0.45)', textDecoration: 'none' }}
+        title="Chat on WhatsApp">
         <WAIcon size={26} color="#fff" />
       </a>
 
-      {/* Hero */}
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section style={{ background: C.white, padding: '5rem 3rem 4.5rem', borderBottom: '1px solid ' + C.border }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.7rem', color: C.textMuted, letterSpacing: '0.28em', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
@@ -101,23 +121,23 @@ export default function Home({ setPage }) {
               <WAIcon size={18} /> WhatsApp Us
             </a>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', border: '1px solid ' + C.border, borderRadius: 4, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', border: '1px solid ' + C.border, borderRadius: 4, overflow: 'hidden' }}>
             {[
               [c('hero_stat1_value'), c('hero_stat1_label')],
               [c('hero_stat2_value'), c('hero_stat2_label')],
               [c('hero_stat3_value'), c('hero_stat3_label')],
               [c('hero_stat4_value'), c('hero_stat4_label')],
             ].map(([v, l], i) => (
-              <div key={i} style={{ padding: '1.25rem 1.5rem', textAlign: 'center', borderRight: i < 3 ? '1px solid ' + C.border : 'none' }}>
-                <div style={{ ...serif, fontSize: '2rem', fontWeight: 600, color: C.maroon }}>{v}</div>
-                <div style={{ ...mono, fontSize: '0.6rem', color: C.textMuted, letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 3 }}>{l}</div>
+              <div key={i} style={{ padding: '1.25rem 1rem', textAlign: 'center', borderRight: i < 3 ? '1px solid ' + C.border : 'none' }}>
+                <div style={{ ...serif, fontSize: '1.9rem', fontWeight: 600, color: C.maroon }}>{v}</div>
+                <div style={{ ...mono, fontSize: '0.58rem', color: C.textMuted, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 3 }}>{l}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* About Us */}
+      {/* ── About Us ─────────────────────────────────────────────────── */}
       <section id="about" style={{ background: C.gray1, padding: '4.5rem 3rem', borderBottom: '1px solid ' + C.border }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>About Us</p>
@@ -137,73 +157,99 @@ export default function Home({ setPage }) {
         </div>
       </section>
 
-      {/* Why Choose */}
+      {/* ── Why Choose ───────────────────────────────────────────────── */}
       <section style={{ background: C.white, padding: '4.5rem 3rem', borderBottom: '1px solid ' + C.border }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Why Researchers Choose Acadmify</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>Built for Academic Excellence</h2>
           <Divider />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(235px,1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1.5rem' }}>
             {[
-              ['Archival Print Quality', 'Every thesis is printed on acid-free, 70gsm bond paper using high-resolution 600dpi laser printing. Your research is preserved as it deserves — for decades.'],
-              ['24-Hour Guaranteed Delivery', 'We understand submission deadlines. Place your order before midnight — receive your bound thesis at your doorstep by morning.'],
-              ['University Compliant Binding', 'Our specifications meet DU, JNU, IIT, AIIMS, and all Rajasthan university requirements including JNVU, MBM, and RTU. Accepted first time, every time.'],
-              ['Transparent Pricing', 'No hidden charges. Get an instant itemised quotation before you commit to anything.'],
+              ['Archival Print Quality',       'Every thesis printed on acid-free 70gsm bond paper, 600dpi laser. Your research preserved for decades.'],
+              ['24-Hour Guaranteed Delivery',  'Order before midnight. Receive your professionally bound thesis at your doorstep by morning.'],
+              ['University Compliant Binding', 'Meets specifications of IIT, AIIMS, JNVU, MBM, DU, JNU and all Rajasthan universities.'],
+              ['Transparent Pricing',          'No hidden charges. Get an instant itemised quotation before you commit to anything.'],
             ].map(([title, desc]) => (
               <div key={title} style={{ padding: '1.5rem', background: C.gray1, border: '1px solid ' + C.border, borderTop: '3px solid ' + C.maroon, borderRadius: '0 0 4px 4px' }}>
                 <h3 style={{ ...serif, fontSize: '1.2rem', fontWeight: 600, color: C.maroon, marginBottom: '0.6rem' }}>{title}</h3>
-                <p style={{ ...serif, fontSize: '0.97rem', color: C.textBody, lineHeight: 1.8 }}>{desc}</p>
+                <p style={{ ...serif, fontSize: '0.97rem', color: C.textBody, lineHeight: 1.8, margin: 0 }}>{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Gallery */}
+      {/* ── Gallery ──────────────────────────────────────────────────── */}
       <section id="gallery" style={{ background: C.gray1, padding: '4.5rem 3rem', borderBottom: '1px solid ' + C.border }}>
-        <div style={{ maxWidth: 920, margin: '0 auto' }}>
+        <div style={{ maxWidth: 980, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Gallery</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>Universities We Have Served</h2>
           <Divider />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1.25rem' }}>
-            {UNIVERSITIES.map(({ name, img }) => (
-              <div key={name} style={{ borderRadius: 6, overflow: 'hidden', border: '1px solid ' + C.border, background: C.white }}>
-                <img src={img} alt={name} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }}
-                  onError={e => { e.target.style.display = 'none' }} />
-                <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid ' + C.border }}>
-                  <p style={{ ...serif, fontSize: '0.97rem', color: C.maroon, fontWeight: 600, margin: 0 }}>{name}</p>
+
+          {galleryLoading ? (
+            <div style={{ textAlign: 'center', padding: '2rem', ...mono, fontSize: '0.75rem', color: C.textMuted }}>Loading gallery...</div>
+          ) : gallery.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', border: '2px dashed ' + C.border, borderRadius: 8 }}>
+              <div style={{ fontSize: 32, marginBottom: '0.75rem' }}>🖼</div>
+              <p style={{ ...serif, fontSize: '1.05rem', color: C.textMuted }}>No gallery photos yet.</p>
+              <p style={{ ...mono, fontSize: '0.7rem', color: C.textMuted, marginTop: '0.5rem' }}>
+                Add photos from Admin Panel → Gallery tab
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1.25rem' }}>
+              {gallery.map((item) => (
+                <div key={item.id} style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid ' + C.border, background: C.white, boxShadow: '0 1px 6px rgba(122,30,30,0.06)' }}>
+                  <div style={{ position: 'relative', height: 200, background: C.gray2, overflow: 'hidden' }}>
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      onError={e => {
+                        e.target.style.display = 'none'
+                        e.target.parentNode.querySelector('.img-fallback').style.display = 'flex'
+                      }}
+                    />
+                    <div className="img-fallback" style={{ display: 'none', position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, background: C.gray2 }}>
+                      <div style={{ fontSize: 32 }}>🏛</div>
+                      <div style={{ ...mono, fontSize: '0.62rem', color: C.textMuted }}>Image loading...</div>
+                    </div>
+                  </div>
+                  <div style={{ padding: '0.85rem 1rem', borderTop: '1px solid ' + C.border }}>
+                    <p style={{ ...serif, fontSize: '1rem', color: C.maroon, fontWeight: 600, margin: 0 }}>{item.name}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Process */}
+      {/* ── Process ──────────────────────────────────────────────────── */}
       <section style={{ background: C.white, padding: '4.5rem 3rem', borderBottom: '1px solid ' + C.border }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>The Process</p>
           <h2 style={{ ...serif, fontSize: '2.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>From Upload to Doorstep in 5 Steps</h2>
           <Divider />
           {[
-            ['Upload',    'Share your thesis PDF and optional cover page through our secure portal. All files are encrypted and accessible only to our printing team.'],
-            ['Configure', 'Select binding type — hardbound, softbound, or spiral. Choose your cover colour. Specify number of copies required.'],
-            ['Quotation', 'Receive an instant, fully itemised quotation. Pricing is completely transparent with no hidden charges.'],
-            ['Payment',   'Pay securely via Razorpay — UPI, credit/debit cards, and net banking accepted. Order confirmed immediately upon payment.'],
-            ['Delivered', 'Your bound thesis is hand-delivered within 24 hours. A tracking link is sent to your registered WhatsApp number.'],
+            ['Upload',    'Share your thesis PDF and optional cover page through our secure portal. All files encrypted.'],
+            ['Configure', 'Select binding — hardbound, softbound, or spiral. Choose cover colour and number of copies.'],
+            ['Quotation', 'Receive an instant, fully itemised quotation. Completely transparent with no hidden charges.'],
+            ['Payment',   'Pay securely via Razorpay — UPI, credit/debit cards, net banking. Confirmed immediately.'],
+            ['Delivered', 'Bound thesis hand-delivered within 24 hours. Tracking link sent to your WhatsApp.'],
           ].map(([title, desc], i) => (
             <div key={title} style={{ display: 'flex', gap: '1.75rem', padding: '1.5rem 0', borderBottom: i < 4 ? '1px solid ' + C.border : 'none' }}>
-              <div style={{ ...mono, fontSize: '1.6rem', color: C.gray3, fontWeight: 500, minWidth: 40, paddingTop: 3 }}>{'0' + (i + 1)}</div>
+              <div style={{ ...mono, fontSize: '1.6rem', color: C.gray3, fontWeight: 500, minWidth: 40, paddingTop: 2 }}>{'0' + (i + 1)}</div>
               <div>
                 <h3 style={{ ...serif, fontSize: '1.25rem', fontWeight: 600, color: C.maroon, marginBottom: '0.35rem' }}>{title}</h3>
-                <p style={{ ...serif, fontSize: '1rem', color: C.textBody, lineHeight: 1.8 }}>{desc}</p>
+                <p style={{ ...serif, fontSize: '1rem', color: C.textBody, lineHeight: 1.8, margin: 0 }}>{desc}</p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* ── Pricing ──────────────────────────────────────────────────── */}
       <section style={{ background: C.gray1, padding: '4.5rem 3rem', borderBottom: '1px solid ' + C.border }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Pricing Schedule</p>
@@ -212,7 +258,7 @@ export default function Home({ setPage }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', ...serif, fontSize: '1rem' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid ' + C.maroon }}>
-                {['Service', 'Rate', 'Specification'].map((h, i) => (
+                {['Service','Rate','Specification'].map((h, i) => (
                   <th key={h} style={{ textAlign: i === 1 ? 'center' : 'left', padding: '10px 0', color: C.maroon, fontWeight: 600, paddingLeft: i === 2 ? '1.5rem' : 0 }}>{h}</th>
                 ))}
               </tr>
@@ -233,16 +279,14 @@ export default function Home({ setPage }) {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* ── Testimonials ─────────────────────────────────────────────── */}
       <section style={{ background: C.white, padding: '4.5rem 3rem', borderBottom: '1px solid ' + C.border }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
-          <h2 style={{ ...serif, fontSize: '2.2rem', fontWeight: 600, color: C.maroon, textAlign: 'center', marginBottom: '2.25rem' }}>
-            Trusted by Scholars Across India
-          </h2>
+          <h2 style={{ ...serif, fontSize: '2.2rem', fontWeight: 600, color: C.maroon, textAlign: 'center', marginBottom: '2.25rem' }}>Trusted by Scholars Across India</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1.25rem' }}>
             {[
-              ['Acadmify delivered my PhD thesis at 7 AM exactly when I needed it for library submission. Impeccable binding quality.', 'Dr. R. Mehta', 'University of Rajasthan'],
-              ['The binding met all IIT Jodhpur specifications without any revision. Prompt delivery, genuinely professional service.', 'Aakash Sharma', 'IIT Jodhpur'],
+              ['Acadmify delivered my PhD thesis at 7 AM exactly when I needed it. Impeccable binding quality.', 'Dr. R. Mehta', 'University of Rajasthan'],
+              ['The binding met all IIT Jodhpur specifications without any revision. Genuinely professional service.', 'Aakash Sharma', 'IIT Jodhpur'],
               ['Ordered at 11 PM, received by 8 AM. The gold embossing on the cover looked exceptionally professional.', 'Dr. Sunita Patel', 'MBM University, Jodhpur'],
             ].map(([quote, name, inst]) => (
               <div key={name} style={{ padding: '1.75rem', border: '1px solid ' + C.border, borderRadius: 4, background: C.gray1 }}>
@@ -257,7 +301,7 @@ export default function Home({ setPage }) {
         </div>
       </section>
 
-      {/* YouTube */}
+      {/* ── YouTube ──────────────────────────────────────────────────── */}
       <section id="resources" style={{ background: C.gray1, padding: '4.5rem 3rem', borderBottom: '1px solid ' + C.border }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Helpful Resources</p>
@@ -274,7 +318,8 @@ export default function Home({ setPage }) {
             {videos.map(({ id, title, desc }) => (
               <div key={title} style={{ border: '1px solid ' + C.border, borderRadius: 6, overflow: 'hidden', background: C.white }}>
                 {id ? (
-                  <iframe width="100%" height="160" src={'https://www.youtube.com/embed/' + id}
+                  <iframe width="100%" height="160"
+                    src={'https://www.youtube.com/embed/' + id}
                     title={title} frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen style={{ display: 'block' }} />
@@ -294,7 +339,7 @@ export default function Home({ setPage }) {
         </div>
       </section>
 
-      {/* Contact + Map */}
+      {/* ── Contact ──────────────────────────────────────────────────── */}
       <section id="contact" style={{ background: C.white, padding: '4.5rem 3rem', borderBottom: '1px solid ' + C.border }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <p style={{ ...mono, fontSize: '0.65rem', color: C.textMuted, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Find Us</p>
@@ -303,10 +348,10 @@ export default function Home({ setPage }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', alignItems: 'start' }}>
             <div>
               {[
-                ['Address',        c('contact_address')],
-                ['WhatsApp/Call',  c('contact_phone')],
-                ['Email',          c('contact_email')],
-                ['Hours',          c('contact_hours')],
+                ['Address',       c('contact_address')],
+                ['WhatsApp/Call', c('contact_phone')],
+                ['Email',         c('contact_email')],
+                ['Hours',         c('contact_hours')],
               ].map(([label, value]) => (
                 <div key={label} style={{ marginBottom: '1.25rem', paddingBottom: '1.25rem', borderBottom: '1px solid ' + C.border }}>
                   <div style={{ ...mono, fontSize: '0.62rem', color: C.textMuted, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
@@ -318,8 +363,7 @@ export default function Home({ setPage }) {
                   style={{ ...btn('primary'), textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <WAIcon size={18} /> Chat on WhatsApp
                 </a>
-                <a href={'mailto:' + c('contact_email')}
-                  style={{ ...btn('outline'), textDecoration: 'none', textAlign: 'center' }}>
+                <a href={'mailto:' + c('contact_email')} style={{ ...btn('outline'), textDecoration: 'none', textAlign: 'center' }}>
                   Send Email
                 </a>
               </div>
@@ -345,10 +389,10 @@ export default function Home({ setPage }) {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ── Footer ───────────────────────────────────────────────────── */}
       <footer style={{ background: C.maroon, padding: '3rem 3rem 2rem' }}>
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
             <div>
               <div style={{ ...serif, fontSize: '1.5rem', color: '#fff', fontWeight: 600, marginBottom: 4 }}>acadmify</div>
               <div style={{ ...mono, fontSize: '0.52rem', color: '#C69A4A', letterSpacing: '0.22em', marginBottom: '1rem' }}>{c('footer_tagline')}</div>
@@ -360,8 +404,8 @@ export default function Home({ setPage }) {
             </div>
             <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
               {[
-                ['Services', ['Thesis Printing', 'Hardbound Binding', 'Softbound Binding', 'Spiral Binding', 'Lamination']],
-                ['Contact',  ['acadmify.com', 'WhatsApp Orders', 'B2B Institutional', 'Jodhpur Delivery']],
+                ['Services', ['Thesis Printing','Hardbound Binding','Softbound Binding','Spiral Binding','Lamination']],
+                ['Links',    ['Upload Thesis','Track Order','About Us','Contact Us','YouTube']],
               ].map(([heading, items]) => (
                 <div key={heading}>
                   <div style={{ ...mono, fontSize: '0.6rem', color: '#C69A4A', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>{heading}</div>
