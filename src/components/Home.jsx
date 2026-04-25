@@ -200,11 +200,11 @@ export default function Home({ setPage }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1.25rem' }}>
               {gallery.map((item) => (
                 <div key={item.id} style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid ' + C.border, background: C.white, boxShadow: '0 1px 6px rgba(122,30,30,0.06)' }}>
-                  <div style={{ position: 'relative', height: 200, background: C.gray2, overflow: 'hidden' }}>
+                  <div style={{position: 'relative', height: 240, background: '#fff', overflow: 'hidden'}}>
                     <img
                       src={item.image_url}
                       alt={item.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', padding: '8px', background: '#fff' }}
                       onError={e => {
                         e.target.style.display = 'none'
                         e.target.parentNode.querySelector('.img-fallback').style.display = 'flex'
@@ -215,8 +215,8 @@ export default function Home({ setPage }) {
                       <div style={{ ...mono, fontSize: '0.62rem', color: C.textMuted }}>Image loading...</div>
                     </div>
                   </div>
-                  <div style={{ padding: '0.85rem 1rem', borderTop: '1px solid ' + C.border }}>
-                    <p style={{ ...serif, fontSize: '1rem', color: C.maroon, fontWeight: 600, margin: 0 }}>{item.name}</p>
+                  <div style={{ padding: '0.85rem 1rem', borderTop: '1px solid ' + C.border, textAlign: 'center', background: C.gray1 }}>
+                    <p style={{ ...serif, fontSize: '1.1rem', color: C.maroon, fontWeight: 700, margin: 0, textAlign: 'center' }}>{item.name}</p>
                   </div>
                 </div>
               ))}
