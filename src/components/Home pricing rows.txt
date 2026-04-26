@@ -1,0 +1,8 @@
+  const pricingRows = [
+    ['Black & White Printing', '₹2 per page',   '100 gsm Bond Paper/ White paper'],
+    ['Colour Printing',        '₹6-₹10 per page',  '100 gsm Bond Paper/ White paper, ₹6 more than 40 pages in total otherwise ₹10'],
+    ['OHP Transparent Sheet',  '₹5 per sheet',  'OHP transparent sheets placed in front few pages like cover page, Certificates & Declaration'],
+    ['Hardbound Binding',      '₹250 per copy', 'Hardback Binding with cover & spine printing'],
+     ['Soft Binding',      '₹150 per copy', 'Softback Binding with cover printing'],
+    ['Delivery Options',     'Depends on courier charges',    'Doorstep delivery through Rapido parcel at COD'],
+  ]

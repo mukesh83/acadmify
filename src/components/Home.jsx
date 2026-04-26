@@ -63,11 +63,12 @@ export default function Home({ setPage }) {
     '?text=' + encodeURIComponent('Hello Acadmify! I want to get my thesis printed and bound. Please share the details.')
 
   const pricingRows = [
-    ['Black & White Printing', 'Rs.2 / page',   '70gsm acid-free bond, 600dpi laser'],
-    ['Colour Printing',        'Rs.10 / page',  'Rs.6/page for 10+ colour pages with 2+ copies'],
-    ['OHP Transparent Sheet',  'Rs.5 / sheet',  'For transparency/overhead projector sheets'],
-    ['Hardbound Binding',      'Rs.250 / copy', 'Buckram cloth cover, gold foil title stamping'],
-    ['Delivery (Jodhpur)',     'Rs.50 flat',    'Free on orders above Rs.500'],
+    ['Black & White Printing', '₹2 per page',   '100 gsm Bond Paper/ White paper'],
+    ['Colour Printing',        '₹6-₹10 per page',  '100 gsm Bond Paper/ White paper, ₹6 more than 40 pages in total otherwise ₹10'],
+    ['OHP Transparent Sheet',  '₹5 per sheet',  'OHP transparent sheets placed in front few pages like cover page, Certificates & Declaration'],
+    ['Hardbound Binding',      '₹250 per copy', 'Hardback Binding with cover & spine printing'],
+     ['Soft Binding',      '₹150 per copy', 'Softback Binding with cover printing'],
+    ['Delivery Options',     'Depends on courier charges',    'Doorstep delivery through Rapido parcel at COD'],
   ]
 
   const videos = [
