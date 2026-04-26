@@ -64,17 +64,17 @@ export default function Home({ setPage }) {
 
   const pricingRows = [
     ['Black & White Printing', '₹2 per page',   '100 gsm Bond Paper/ White paper'],
-    ['Colour Printing',        '₹6-₹10 per page',  '100 gsm Bond Paper/ White paper, ₹6 more than 40 pages in total otherwise ₹10'],
-    ['OHP Transparent Sheet',  '₹5 per sheet',  'OHP transparent sheets placed in front few pages like cover page, Certificates & Declaration'],
+    ['Colour Printing',        '₹6-₹10 per page',  '100 gsm Bond Paper/ White paper, Rate ₹6 for > 40 pages in total otherwise ₹10'],
+    ['OHP Transparent Sheet',  '₹5 per sheet',  'OHP transparent sheets used before Title page, Certificates, Declaration & chapter headings'],
     ['Hardbound Binding',      '₹250 per copy', 'Hardback Binding with cover & spine printing'],
      ['Soft Binding',      '₹150 per copy', 'Softback Binding with cover printing'],
-    ['Delivery Options',     'Depends on courier charges',    'Doorstep delivery through Rapido parcel at COD'],
+    ['Delivery Options',     'Courier Charges apply',    'Rapido parcel for doorstep delivery and pay via COD'],
   ]
 
   const videos = [
-    { id: c('youtube_video1_id'), title: c('youtube_video1_title'), desc: c('youtube_video1_desc') },
-    { id: c('youtube_video2_id'), title: c('youtube_video2_title'), desc: c('youtube_video2_desc') },
-    { id: c('youtube_video3_id'), title: c('youtube_video3_title'), desc: c('youtube_video3_desc') },
+    { id: c('1LstqzXxaSg'), title: c('Thesis Formatting Masterclass'), desc: c('Complete tutorial for thesis formatting') },
+    { id: c('9SKXdk-RGK8'), title: c('How to set Thesis Margin'), desc: c('Setting Thesis Margin to 1.5 inch on left side for perfect binding') },
+    { id: c('5qIdFXzbHX8'), title: c('How to insert different style of page numbering in same Thesis'), desc: c('Inserting Roman and Arabic style of page numbering in same Thesis') },
   ]
 
   if (loading) return (
