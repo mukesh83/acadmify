@@ -72,10 +72,10 @@ export default function Home({ setPage }) {
   ]
 
   const videos = [
-    { id: c('1LstqzXxaSg'), title: c('Thesis Formatting Masterclass'), desc: c('Complete tutorial for thesis formatting') },
-    { id: c('9SKXdk-RGK8'), title: c('How to set Thesis Margin'), desc: c('Setting Thesis Margin to 1.5 inch on left side for perfect binding') },
-    { id: c('5qIdFXzbHX8'), title: c('How to insert different style of page numbering in same Thesis'), desc: c('Inserting Roman and Arabic style of page numbering in same Thesis') },
-  ]
+  { id: c('youtube_video1_id'), title: c('youtube_video1_title'), desc: c('youtube_video1_desc') },
+  { id: c('youtube_video2_id'), title: c('youtube_video2_title'), desc: c('youtube_video2_desc') },
+  { id: c('youtube_video3_id'), title: c('youtube_video3_title'), desc: c('youtube_video3_desc') }
+];
 
   if (loading) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
