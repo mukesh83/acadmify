@@ -1,0 +1,12 @@
+# Acadmify — robots.txt
+# Tells search engine crawlers which pages to index
+
+User-agent: *
+Allow: /
+
+# Block admin panel from indexing
+Disallow: /#admin-mukesh
+Disallow: /#admin
+
+# Sitemap location
+Sitemap: https://acadmify.com/sitemap.xml
