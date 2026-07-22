@@ -45,6 +45,7 @@ const SCHEMA = [
       { key: 'about_heading', label: 'Heading',      type: 'text'     },
       { key: 'about_para1',   label: 'Paragraph 1',  type: 'textarea' },
       { key: 'about_para2',   label: 'Paragraph 2',  type: 'textarea' },
+      { key: 'about_para3',   label: 'Paragraph 3',  type: 'textarea' },
     ],
   },
   {

@@ -138,6 +138,7 @@ export default function Home({ setPage }) {
           <Divider />
           <p style={{ ...serif, fontSize:'1.15rem', color:C.textBody, lineHeight:1.9, marginBottom:'1.25rem' }}>{c('about_para1')}</p>
           <p style={{ ...serif, fontSize:'1.15rem', color:C.textBody, lineHeight:1.9, marginBottom:'2rem' }}>{c('about_para2')}</p>
+          <p style={{ ...serif, fontSize: '1.15rem', color: C.textBody, lineHeight: 1.9, marginBottom: '2rem' }}>{c('about_para3')}</p>
           <div style={{ display:'flex', gap:'1rem', flexWrap:'wrap' }}>
             <a href={waUrl} target="_blank" rel="noreferrer"
               style={{ ...btn('primary'), textDecoration:'none', display:'inline-flex', alignItems:'center', gap:8 }}>
