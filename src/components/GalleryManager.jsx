@@ -1,373 +1,276 @@
-/**
- * GalleryManager — Fixed version
- * Upload works via:
- *   1. Supabase Storage (if bucket is public)
- *   2. imgbb.com free API (backup — no signup needed)
- *   3. Paste any public image URL manually
- */
+// ============================================================================
+// src/components/GalleryManager.jsx
+// The "Gallery" tab. Uploads to Supabase Storage, records the row in the
+// gallery table, and deletes both together.
+//
+// Works from a phone: the file picker offers the camera roll.
+// ============================================================================
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 import { C } from '../constants'
-import { mono, serif, inputStyle, labelStyle, btn } from '../utils/styles'
 
-const SUPABASE_URL    = import.meta.env.VITE_SUPABASE_URL     || ''
-const SUPABASE_ANON   = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-const STORAGE_BUCKET  = 'gallery-images'
-
-// imgbb free image hosting — get free API key at imgbb.com/api
-// Replace with your own key from imgbb.com (free, takes 1 minute)
-const IMGBB_API_KEY   = import.meta.env.VITE_IMGBB_API_KEY    || ''
-
-const hasSupabase = !!(SUPABASE_URL && SUPABASE_ANON)
-
-function apiHeaders(extra = {}) {
-  return {
-    'apikey':        SUPABASE_ANON,
-    'Authorization': 'Bearer ' + SUPABASE_ANON,
-    'Content-Type':  'application/json',
-    ...extra,
-  }
-}
-
-// ── Upload image to Supabase Storage ────────────────────────────────────────
-async function uploadToSupabase(file) {
-  const ext      = file.name.split('.').pop().toLowerCase()
-  const fileName = Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + ext
-
-  const res = await fetch(
-    SUPABASE_URL + '/storage/v1/object/' + STORAGE_BUCKET + '/' + fileName,
-    {
-      method:  'POST',
-      headers: {
-        'apikey':        SUPABASE_ANON,
-        'Authorization': 'Bearer ' + SUPABASE_ANON,
-        'Content-Type':  file.type,
-        'Cache-Control': '3600',
-      },
-      body: file,
-    }
-  )
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error('Supabase upload failed: ' + err)
-  }
-  // Return public URL
-  return SUPABASE_URL + '/storage/v1/object/public/' + STORAGE_BUCKET + '/' + fileName
-}
-
-// ── Upload image to imgbb (free fallback) ────────────────────────────────────
-async function uploadToImgbb(file) {
-  if (!IMGBB_API_KEY) throw new Error('No imgbb API key configured')
-  const formData = new FormData()
-  formData.append('image', file)
-  const res  = await fetch('https://api.imgbb.com/1/upload?key=' + IMGBB_API_KEY, {
-    method: 'POST',
-    body:   formData,
-  })
-  const data = await res.json()
-  if (!data.success) throw new Error('imgbb upload failed')
-  return data.data.url
-}
-
-// ── Convert file to base64 data URL (last resort — stores in DB) ─────────────
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload  = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
-
-// ── Save gallery item to Supabase DB ─────────────────────────────────────────
-async function saveToDb(name, imageUrl, sortOrder) {
-  if (!hasSupabase) return null
-  const res = await fetch(SUPABASE_URL + '/rest/v1/gallery', {
-    method:  'POST',
-    headers: { ...apiHeaders(), 'Prefer': 'return=representation' },
-    body:    JSON.stringify({ name, image_url: imageUrl, sort_order: sortOrder, active: true }),
-  })
-  const data = await res.json()
-  return Array.isArray(data) ? data[0] : null
-}
-
-// ── Load gallery from Supabase DB ────────────────────────────────────────────
-async function loadFromDb() {
-  if (!hasSupabase) return []
-  const res  = await fetch(
-    SUPABASE_URL + '/rest/v1/gallery?select=*&active=eq.true&order=sort_order.asc',
-    { headers: apiHeaders() }
-  )
-  const data = await res.json()
-  return Array.isArray(data) ? data : []
-}
-
-// ── Delete from Supabase DB ──────────────────────────────────────────────────
-async function deleteFromDb(id) {
-  if (!hasSupabase) return
-  await fetch(SUPABASE_URL + '/rest/v1/gallery?id=eq.' + id, {
-    method:  'DELETE',
-    headers: apiHeaders(),
-  })
-}
+const BUCKET = 'gallery-images'
+const MAX_MB = 5
 
 export default function GalleryManager() {
-  const [items,     setItems]     = useState([])
-  const [loading,   setLoading]   = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [newName,   setNewName]   = useState('')
-  const [newUrl,    setNewUrl]    = useState('')
-  const [preview,   setPreview]   = useState('')
-  const [msg,       setMsg]       = useState(null)
+  const [photos, setPhotos]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [file, setFile]       = useState(null)
+  const [name, setName]       = useState('')
+  const [busy, setBusy]       = useState(false)
+  const [message, setMessage] = useState(null)
 
-  const showMsg = (text, isError = false) => {
-    setMsg({ text, isError })
-    setTimeout(() => setMsg(null), 5000)
-  }
+  useEffect(() => { load() }, [])
 
-  // Load on mount
-  useEffect(() => {
+  async function load() {
     setLoading(true)
-    loadFromDb()
-      .then(rows => { if (rows.length > 0) setItems(rows) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    const { data, error } = await supabase
+      .from('gallery')
+      .select('*')
+      .order('id', { ascending: false })
 
-  // ── Handle file selected from PC/mobile ──────────────────────────────────
-  const handleFile = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) { showMsg('Only image files allowed (JPG, PNG, WebP)', true); return }
-    if (file.size > 10 * 1024 * 1024) { showMsg('File too large. Maximum size is 10MB.', true); return }
+    if (error) setMessage({ kind: 'error', text: 'Could not load: ' + error.message })
+    else setPhotos(data || [])
+    setLoading(false)
+  }
 
-    setUploading(true)
-    showMsg('Uploading image...')
+  function pickFile(e) {
+    const f = e.target.files && e.target.files[0]
+    setMessage(null)
+    if (!f) return
 
-    try {
-      let imageUrl = ''
-
-      // Try Supabase Storage first
-      if (hasSupabase) {
-        try {
-          imageUrl = await uploadToSupabase(file)
-          showMsg('Image uploaded to Supabase. Enter a name and click Add Photo.')
-        } catch (err) {
-          console.warn('Supabase upload failed, trying imgbb:', err.message)
-          imageUrl = ''
-        }
-      }
-
-      // Try imgbb if Supabase failed or not configured
-      if (!imageUrl && IMGBB_API_KEY) {
-        try {
-          imageUrl = await uploadToImgbb(file)
-          showMsg('Image uploaded to imgbb. Enter a name and click Add Photo.')
-        } catch (err) {
-          console.warn('imgbb failed, using base64:', err.message)
-          imageUrl = ''
-        }
-      }
-
-      // Last resort: base64 (works always, stored in DB)
-      if (!imageUrl) {
-        imageUrl = await fileToBase64(file)
-        showMsg('Image loaded locally. Enter a name and click Add Photo.')
-      }
-
-      setNewUrl(imageUrl)
-      setPreview(imageUrl)
-    } catch (err) {
-      showMsg('Upload failed: ' + err.message, true)
-    } finally {
-      setUploading(false)
-      e.target.value = ''
+    if (!f.type.startsWith('image/')) {
+      setMessage({ kind: 'error', text: 'Please choose an image file (JPG or PNG).' })
+      return
     }
-  }
-
-  // ── Add photo ─────────────────────────────────────────────────────────────
-  const handleAdd = async () => {
-    if (!newName.trim())  { showMsg('Please enter a name for this photo.', true); return }
-    if (!newUrl.trim())   { showMsg('Please upload a photo or paste an image URL.', true); return }
-
-    setUploading(true)
-    try {
-      const sortOrder = items.length + 1
-      const saved     = await saveToDb(newName.trim(), newUrl.trim(), sortOrder)
-      const newItem   = saved || { id: Date.now(), name: newName.trim(), image_url: newUrl.trim(), sort_order: sortOrder }
-
-      setItems(prev => [...prev, newItem])
-      setNewName('')
-      setNewUrl('')
-      setPreview('')
-      showMsg('Photo added successfully. It is now visible on your website.')
-    } catch (err) {
-      // Still add locally even if DB fails
-      setItems(prev => [...prev, { id: Date.now(), name: newName.trim(), image_url: newUrl.trim() }])
-      setNewName('')
-      setNewUrl('')
-      setPreview('')
-      showMsg('Photo added locally. Check Supabase connection to save permanently.')
-    } finally {
-      setUploading(false)
+    if (f.size > MAX_MB * 1024 * 1024) {
+      setMessage({
+        kind: 'error',
+        text: 'That image is ' + (f.size / 1048576).toFixed(1) +
+              ' MB. Please keep it under ' + MAX_MB + ' MB.',
+      })
+      return
     }
+
+    setFile(f)
+    if (!name) setName(f.name.replace(/\.[^.]+$/, ''))
   }
 
-  // ── Delete photo ─────────────────────────────────────────────────────────
-  const handleDelete = async (item) => {
-    if (!window.confirm('Remove "' + item.name + '" from gallery?')) return
-    setItems(prev => prev.filter(i => i.id !== item.id))
-    try { await deleteFromDb(item.id) } catch {}
-    showMsg('"' + item.name + '" removed from gallery.')
+  async function upload() {
+    if (!file) {
+      setMessage({ kind: 'error', text: 'Choose a photo first.' })
+      return
+    }
+
+    setBusy(true)
+    setMessage(null)
+
+    // Safe filename: no spaces, no odd characters, always unique.
+    const ext      = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const safeBase = (name || 'photo').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)
+    const filename = Date.now() + '-' + safeBase + '.' + ext
+
+    const { error: upErr } = await supabase
+      .storage
+      .from(BUCKET)
+      .upload(filename, file, { cacheControl: '3600', upsert: false })
+
+    if (upErr) {
+      setBusy(false)
+      setMessage({
+        kind: 'error',
+        text: upErr.message.toLowerCase().includes('policy')
+          ? 'Not allowed. Sign out and sign in again, then retry.'
+          : 'Upload failed: ' + upErr.message,
+      })
+      return
+    }
+
+    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(filename)
+
+    // If your column is image_url rather than url, change it on the next line.
+    const { error: rowErr } = await supabase
+      .from('gallery')
+      .insert({ name: name || 'Photo', url: pub.publicUrl, active: true })
+
+    setBusy(false)
+
+    if (rowErr) {
+      // Do not leave an orphan file sitting in storage.
+      await supabase.storage.from(BUCKET).remove([filename])
+      setMessage({ kind: 'error', text: 'Could not save: ' + rowErr.message })
+      return
+    }
+
+    setFile(null)
+    setName('')
+    setMessage({ kind: 'ok', text: 'Photo added.' })
+    load()
   }
 
-  const inp = { ...inputStyle, fontSize: '0.97rem', padding: '9px 12px' }
+  async function remove(photo) {
+    if (!window.confirm('Delete "' + (photo.name || 'this photo') + '" permanently?')) return
+
+    setBusy(true)
+
+    // Work the storage path back out of the public URL.
+    const marker = '/' + BUCKET + '/'
+    const idx    = String(photo.url || '').indexOf(marker)
+    const path   = idx > -1 ? photo.url.slice(idx + marker.length) : null
+
+    const { error } = await supabase.from('gallery').delete().eq('id', photo.id)
+
+    if (!error && path) {
+      await supabase.storage.from(BUCKET).remove([decodeURIComponent(path)])
+    }
+
+    setBusy(false)
+
+    if (error) setMessage({ kind: 'error', text: 'Delete failed: ' + error.message })
+    else { setMessage({ kind: 'ok', text: 'Deleted.' }); load() }
+  }
 
   return (
     <div>
-      {/* Status banner */}
-      <div style={{ background: hasSupabase ? 'rgba(30,138,74,0.08)' : 'rgba(198,154,74,0.1)', border: '1px solid ' + (hasSupabase ? 'rgba(30,138,74,0.25)' : 'rgba(198,154,74,0.3)'), borderRadius: 4, padding: '0.75rem 1rem', marginBottom: '1.5rem', ...mono, fontSize: '0.7rem', color: hasSupabase ? '#1E5A30' : '#7A5C10' }}>
-        {hasSupabase
-          ? '🟢 Supabase connected — photos you add appear on acadmify.com immediately'
-          : '🟡 No Supabase — photos stored locally in browser only'}
-      </div>
-
-      {/* ── Add new photo ─────────────────────────────────────────────── */}
-      <div style={{ background: C.gray1, border: '1px solid ' + C.border, borderRadius: 6, padding: '1.5rem', marginBottom: '2rem' }}>
-        <h3 style={{ ...serif, fontSize: '1.35rem', fontWeight: 600, color: C.maroon, marginBottom: '1.25rem' }}>
-          Add New Photo
+      {/* Upload panel */}
+      <div style={{
+        background: C.gray1,
+        border: '1px solid ' + C.gray3,
+        padding: '20px 22px',
+        marginBottom: 28,
+      }}>
+        <h3 style={{ color: C.maroon, margin: '0 0 14px', fontSize: 17 }}>
+          Add a photo
         </h3>
 
-        {/* Name input */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={labelStyle}>University or Caption Name</label>
-          <input value={newName} onChange={e => setNewName(e.target.value)}
-            placeholder="e.g. AIIMS Jodhpur, IIT Jodhpur" style={inp} />
-        </div>
+        <label style={{
+          display: 'block',
+          border: '1.5px dashed ' + C.gray3,
+          background: C.white,
+          padding: '22px 16px',
+          textAlign: 'center',
+          cursor: 'pointer',
+          marginBottom: 14,
+          color: C.textMuted,
+          fontSize: 15,
+        }}>
+          {file ? file.name : 'Tap to choose a photo (JPG or PNG, under 5 MB)'}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={pickFile}
+            style={{ display: 'none' }}
+          />
+        </label>
 
-        {/* Upload from device */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={labelStyle}>Upload Photo from PC or Mobile</label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.9rem 1.1rem', border: '2px dashed ' + (preview ? C.maroon : C.border), borderRadius: 6, cursor: uploading ? 'not-allowed' : 'pointer', background: preview ? 'rgba(122,30,30,0.04)' : '#fff' }}>
-            <div style={{ fontSize: 24 }}>{uploading ? '⏳' : '📷'}</div>
-            <div>
-              <div style={{ ...serif, fontSize: '1rem', color: C.maroon, fontWeight: 600 }}>
-                {uploading ? 'Uploading...' : preview ? 'Photo ready — click to change' : 'Click here to select photo'}
-              </div>
-              <div style={{ ...mono, fontSize: '0.62rem', color: C.textMuted, marginTop: 2 }}>
-                JPG, PNG, WebP — max 10MB — works on phone and PC
-              </div>
-            </div>
-            <input type="file" accept="image/*" capture="environment"
-              onChange={handleFile} disabled={uploading} style={{ display: 'none' }} />
-          </label>
-        </div>
+        <input
+          placeholder="Caption, e.g. Maroon hardbound - IIT Jodhpur PhD"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            fontSize: 16,
+            fontFamily: 'inherit',
+            border: '1px solid ' + C.gray3,
+            borderRadius: 2,
+            marginBottom: 14,
+          }}
+        />
 
-        {/* OR paste URL */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-          <span style={{ ...mono, fontSize: '0.65rem', color: C.textMuted }}>OR PASTE IMAGE URL</span>
-          <div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
-
-        <div style={{ marginBottom: '1.25rem' }}>
-          <input value={newUrl} onChange={e => { setNewUrl(e.target.value); setPreview(e.target.value) }}
-            placeholder="https://..." style={inp} />
-        </div>
-
-        {/* Preview */}
-        {preview && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={labelStyle}>Preview</label>
-            <img src={preview} alt="preview"
-              style={{ height: 150, width: 'auto', maxWidth: '100%', borderRadius: 4, border: '1px solid ' + C.border, objectFit: 'cover', display: 'block' }}
-              onError={e => { e.target.style.display = 'none'; showMsg('Image URL is broken or blocked. Please upload the file directly.', true) }} />
-          </div>
-        )}
-
-        {/* Message */}
-        {msg && (
-          <div style={{ ...mono, fontSize: '0.72rem', color: msg.isError ? '#C0392B' : '#1E6B3A', marginBottom: '1rem', padding: '0.6rem 0.9rem', background: msg.isError ? 'rgba(192,57,43,0.07)' : 'rgba(30,107,58,0.07)', borderRadius: 4, border: '1px solid ' + (msg.isError ? 'rgba(192,57,43,0.2)' : 'rgba(30,107,58,0.2)') }}>
-            {msg.text}
-          </div>
-        )}
-
-        <button onClick={handleAdd} disabled={uploading || !newName || !newUrl}
-          style={{ ...btn('primary'), opacity: (uploading || !newName || !newUrl) ? 0.5 : 1, width: '100%' }}>
-          {uploading ? 'Please wait...' : 'Add Photo to Gallery'}
+        <button
+          onClick={upload}
+          disabled={busy || !file}
+          style={{
+            padding: '11px 26px',
+            fontSize: 15,
+            fontFamily: 'inherit',
+            background: !file ? C.gray3 : C.maroon,
+            color: !file ? C.textMuted : C.white,
+            border: 'none',
+            borderRadius: 2,
+            cursor: !file ? 'default' : 'pointer',
+          }}
+        >
+          {busy ? 'Working...' : 'Add Photo'}
         </button>
-      </div>
 
-      {/* ── How to upload from phone ─────────────────────────────────── */}
-      <div style={{ background: 'rgba(122,30,30,0.04)', border: '1px solid ' + C.border, borderRadius: 6, padding: '1.25rem', marginBottom: '2rem' }}>
-        <div style={{ ...serif, fontSize: '1.05rem', fontWeight: 600, color: C.maroon, marginBottom: '0.75rem' }}>
-          How to Add Photos from Your Phone
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-          {[
-            ['From Mobile (Easiest)', [
-              '1. Open acadmify.com/#admin-mukesh on your phone',
-              '2. Login to Admin → Gallery tab',
-              '3. Tap "Click here to select photo"',
-              '4. Choose from Gallery or take new photo',
-              '5. Enter university name',
-              '6. Tap Add Photo — done instantly',
-            ]],
-            ['From WhatsApp on PC', [
-              '1. Open web.whatsapp.com on PC',
-              '2. Find the thesis delivery photo',
-              '3. Click the photo to open full size',
-              '4. Right-click → Save image as',
-              '5. Save to Desktop',
-              '6. Upload using the button above',
-            ]],
-          ].map(([title, steps]) => (
-            <div key={title}>
-              <div style={{ ...serif, fontSize: '0.97rem', color: C.maroon, fontWeight: 600, marginBottom: '0.5rem' }}>{title}</div>
-              {steps.map((s, i) => (
-                <div key={i} style={{ ...mono, fontSize: '0.68rem', color: C.textMuted, lineHeight: 1.7 }}>{s}</div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Current gallery grid ─────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h3 style={{ ...serif, fontSize: '1.35rem', fontWeight: 600, color: C.maroon }}>
-          Current Gallery ({items.length} photos)
-        </h3>
-        {items.length === 0 && !loading && (
-          <span style={{ ...mono, fontSize: '0.68rem', color: C.textMuted }}>No photos yet — add your first photo above</span>
+        {message && (
+          <p style={{
+            marginTop: 12,
+            marginBottom: 0,
+            fontSize: 14,
+            color: message.kind === 'error' ? '#B02020' : '#1E6B3A',
+          }}>
+            {message.text}
+          </p>
         )}
       </div>
+
+      {/* Existing photos */}
+      <h3 style={{ color: C.maroon, margin: '0 0 14px', fontSize: 17 }}>
+        Photos on the site ({photos.length})
+      </h3>
 
       {loading ? (
-        <div style={{ ...mono, fontSize: '0.75rem', color: C.textMuted, padding: '2rem', textAlign: 'center' }}>
-          Loading gallery...
-        </div>
+        <p style={{ color: C.textMuted }}>Loading...</p>
+      ) : photos.length === 0 ? (
+        <p style={{ color: C.textMuted }}>No photos yet.</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: '1rem' }}>
-          {items.map(item => (
-            <div key={item.id} style={{ border: '1px solid ' + C.border, borderRadius: 6, overflow: 'hidden', background: '#fff' }}>
-              <div style={{ position: 'relative' }}>
-                <img src={item.image_url} alt={item.name}
-                  style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block', background: C.gray2 }}
-                  onError={e => {
-                    e.target.style.display = 'none'
-                    e.target.nextSibling.style.display = 'flex'
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
+          gap: 16,
+        }}>
+          {photos.map((p) => (
+            <div key={p.id} style={{
+              border: '1px solid ' + C.gray3,
+              background: C.white,
+            }}>
+              <div style={{
+                height: 140,
+                background: C.gray1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 8,
+              }}>
+                <img
+                  src={p.url}
+                  alt={p.name || 'Gallery photo'}
+                  loading="lazy"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',   // contain, not cover - never crop a thesis
                   }}
                 />
-                <div style={{ display: 'none', height: 140, alignItems: 'center', justifyContent: 'center', background: C.gray2, flexDirection: 'column', gap: 6 }}>
-                  <div style={{ fontSize: 24 }}>🖼</div>
-                  <div style={{ ...mono, fontSize: '0.6rem', color: C.textMuted, textAlign: 'center', padding: '0 8px' }}>Image not loading</div>
-                </div>
               </div>
-              <div style={{ padding: '0.6rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid ' + C.border }}>
-                <span style={{ ...serif, fontSize: '0.85rem', color: C.maroon, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 130 }}>{item.name}</span>
-                <button onClick={() => handleDelete(item)} title="Remove"
-                  style={{ background: 'transparent', border: 'none', color: '#C0392B', cursor: 'pointer', fontSize: '1rem', padding: '2px 4px', flexShrink: 0 }}>
-                  ✕
+              <div style={{ padding: '10px 12px' }}>
+                <div style={{
+                  fontSize: 13,
+                  color: C.textBody,
+                  marginBottom: 8,
+                  wordBreak: 'break-word',
+                }}>
+                  {p.name}
+                </div>
+                <button
+                  onClick={() => remove(p)}
+                  disabled={busy}
+                  style={{
+                    fontSize: 13,
+                    fontFamily: 'inherit',
+                    color: '#B02020',
+                    background: 'none',
+                    border: '1px solid #E5C5C5',
+                    borderRadius: 2,
+                    padding: '5px 12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Delete
                 </button>
               </div>
             </div>

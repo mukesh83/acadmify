@@ -1,292 +1,277 @@
-/**
- * ContentEditor — the CMS tab inside the Admin Panel.
- * Mukesh can edit all website text here without touching any code.
- *
- * Works in two modes:
- *   1. LOCAL mode  — saves to localStorage (no backend needed, changes persist in browser)
- *   2. SUPABASE mode — saves to Supabase (changes visible to all visitors)
- *
- * Mode is auto-detected based on VITE_SUPABASE_URL being set.
- */
+// ============================================================================
+// src/components/ContentEditor.jsx
+// The "Edit Website" tab. Saves to Supabase site_content.
+//
+// Writes now require a logged-in admin (see sql/005). If saving fails with
+// a permission error, you are not signed in -- sign out and back in.
+// ============================================================================
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { CONTENT_DEFAULTS } from '../hooks/useContent'
 import { C } from '../constants'
-import { mono, serif, inputStyle, labelStyle, btn } from '../utils/styles'
 
-const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL || ''
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-
-// All editable fields grouped by section
-const SCHEMA = [
+// Everything editable, grouped into sections.
+const SECTIONS = [
   {
-    section: 'hero',
-    label: 'Hero Section',
-    desc: 'The first thing visitors see — main heading and description',
+    title: 'Hero (top of homepage)',
     fields: [
-      { key: 'hero_eyebrow',    label: 'Top label (small text)',  type: 'text'     },
-      { key: 'hero_title',      label: 'Main heading',            type: 'text'     },
-      { key: 'hero_subtitle',   label: 'Sub-heading (italic)',    type: 'text'     },
-      { key: 'hero_description',label: 'Description paragraph',  type: 'textarea' },
-      { key: 'hero_stat1_value',label: 'Stat 1 — Number',        type: 'text'     },
-      { key: 'hero_stat1_label',label: 'Stat 1 — Label',         type: 'text'     },
-      { key: 'hero_stat2_value',label: 'Stat 2 — Number',        type: 'text'     },
-      { key: 'hero_stat2_label',label: 'Stat 2 — Label',         type: 'text'     },
-      { key: 'hero_stat3_value',label: 'Stat 3 — Number',        type: 'text'     },
-      { key: 'hero_stat3_label',label: 'Stat 3 — Label',         type: 'text'     },
-      { key: 'hero_stat4_value',label: 'Stat 4 — Number',        type: 'text'     },
-      { key: 'hero_stat4_label',label: 'Stat 4 — Label',         type: 'text'     },
+      ['hero_eyebrow',     'Small line above the heading'],
+      ['hero_title',       'Main heading'],
+      ['hero_subtitle',    'Subheading'],
+      ['hero_description', 'Paragraph', 'area'],
+      ['hero_stat1',       'Stat 1 number'],
+      ['hero_stat1_label', 'Stat 1 label'],
+      ['hero_stat2',       'Stat 2 number'],
+      ['hero_stat2_label', 'Stat 2 label'],
+      ['hero_stat3',       'Stat 3 number'],
+      ['hero_stat3_label', 'Stat 3 label'],
+      ['hero_stat4',       'Stat 4 number'],
+      ['hero_stat4_label', 'Stat 4 label'],
     ],
   },
   {
-    section: 'about',
-    label: 'About Us',
-    desc: 'The About Us section text',
+    title: 'About Us',
     fields: [
-      { key: 'about_heading', label: 'Heading',      type: 'text'     },
-      { key: 'about_para1',   label: 'Paragraph 1',  type: 'textarea' },
-      { key: 'about_para2',   label: 'Paragraph 2',  type: 'textarea' },
-      { key: 'about_para3',   label: 'Paragraph 3',  type: 'textarea' },
+      ['about_heading', 'Heading'],
+      ['about_para1',   'First paragraph',  'area'],
+      ['about_para2',   'Second paragraph', 'area'],
     ],
   },
   {
-    section: 'contact',
-    label: 'Contact Details',
-    desc: 'Address, phone, email shown in the Contact section and footer',
+    title: 'Contact',
     fields: [
-      { key: 'contact_address',          label: 'Full Address',                    type: 'textarea' },
-      { key: 'contact_phone',            label: 'Display Phone Number',            type: 'text'     },
-      { key: 'contact_whatsapp_number',  label: 'WhatsApp Number (no + or spaces)', type: 'text'   },
-      { key: 'contact_email',            label: 'Email Address',                   type: 'text'     },
-      { key: 'contact_hours',            label: 'Business Hours',                  type: 'text'     },
+      ['contact_address',  'Address', 'area'],
+      ['contact_phone',    'Phone (as displayed)'],
+      ['contact_whatsapp', 'WhatsApp number (digits only, e.g. 919460046565)'],
+      ['contact_email',    'Email'],
+      ['contact_hours',    'Opening hours'],
     ],
   },
   {
-    section: 'pricing',
-    label: 'Pricing',
-    desc: 'All rates shown in the pricing table — enter numbers only',
+    title: 'Pricing (numbers only, no Rs. sign)',
     fields: [
-      { key: 'pricing_heading',    label: 'Section Heading',              type: 'text'   },
-      { key: 'pricing_bw',         label: 'B&W rate (₹ per page)',        type: 'number' },
-      { key: 'pricing_color',      label: 'Colour rate (₹ per page)',     type: 'number' },
-      { key: 'pricing_hard',       label: 'Hardbound rate (₹ per copy)',  type: 'number' },
-      { key: 'pricing_soft',       label: 'Softbound rate (₹ per copy)',  type: 'number' },
-      { key: 'pricing_spiral',     label: 'Spiral rate (₹ per copy)',     type: 'number' },
-      { key: 'pricing_delivery',   label: 'Delivery charge (₹)',          type: 'number' },
-      { key: 'pricing_free_above', label: 'Free delivery above (₹)',      type: 'number' },
+      ['pricing_bw',        'B&W per page'],
+      ['pricing_colour',    'Colour per page'],
+      ['pricing_hardbound', 'Hardbound per copy'],
+      ['pricing_ohp',       'OHP sheet'],
+      ['pricing_delivery',  'Delivery charge'],
     ],
   },
   {
-    section: 'youtube',
-    label: 'YouTube / Resources',
-    desc: 'YouTube channel link and video IDs. Get the ID from the video URL after ?v=',
+    title: 'YouTube (paste the video ID only, not the full URL)',
     fields: [
-      { key: 'youtube_channel_url',  label: 'YouTube Channel URL',     type: 'text'     },
-      { key: 'youtube_video1_id',    label: 'Video 1 — ID',            type: 'text'     },
-      { key: 'youtube_video1_title', label: 'Video 1 — Title',         type: 'text'     },
-      { key: 'youtube_video1_desc',  label: 'Video 1 — Description',   type: 'textarea' },
-      { key: 'youtube_video2_id',    label: 'Video 2 — ID',            type: 'text'     },
-      { key: 'youtube_video2_title', label: 'Video 2 — Title',         type: 'text'     },
-      { key: 'youtube_video2_desc',  label: 'Video 2 — Description',   type: 'textarea' },
-      { key: 'youtube_video3_id',    label: 'Video 3 — ID',            type: 'text'     },
-      { key: 'youtube_video3_title', label: 'Video 3 — Title',         type: 'text'     },
-      { key: 'youtube_video3_desc',  label: 'Video 3 — Description',   type: 'textarea' },
+      ['youtube_channel',            'Channel URL'],
+      ['youtube_video1_id',          'Video 1 ID'],
+      ['youtube_video1_title',       'Video 1 title'],
+      ['youtube_video1_description', 'Video 1 description', 'area'],
+      ['youtube_video2_id',          'Video 2 ID'],
+      ['youtube_video2_title',       'Video 2 title'],
+      ['youtube_video2_description', 'Video 2 description', 'area'],
+      ['youtube_video3_id',          'Video 3 ID'],
+      ['youtube_video3_title',       'Video 3 title'],
+      ['youtube_video3_description', 'Video 3 description', 'area'],
     ],
   },
   {
-    section: 'footer',
-    label: 'Footer',
-    desc: 'Footer tagline and copyright text',
+    title: 'Footer',
     fields: [
-      { key: 'footer_tagline',   label: 'Tagline',         type: 'text' },
-      { key: 'footer_copyright', label: 'Copyright line',  type: 'text' },
+      ['footer_tagline',   'Tagline', 'area'],
+      ['footer_copyright', 'Copyright line'],
     ],
   },
 ]
 
-// Load from localStorage (offline mode fallback)
-function loadLocal() {
-  try { return JSON.parse(localStorage.getItem('acadmify_content') || '{}') } catch { return {} }
-}
-function saveLocal(data) {
-  try { localStorage.setItem('acadmify_content', JSON.stringify(data)) } catch {}
+const inputStyle = {
+  width: '100%',
+  padding: '9px 11px',
+  fontSize: 15,
+  fontFamily: 'inherit',
+  border: '1px solid ' + C.gray3,
+  borderRadius: 2,
+  color: C.textBody,
+  background: C.white,
 }
 
-export default function ContentEditor({ adminSecret }) {
-  const [values,      setValues]      = useState({})
-  const [activeTab,   setActiveTab]   = useState('hero')
-  const [saving,      setSaving]      = useState(false)
-  const [saveMsg,     setSaveMsg]     = useState(null)
-  const [loading,     setLoading]     = useState(true)
-  const hasSupabase = !!(SUPABASE_URL && SUPABASE_ANON)
+export default function ContentEditor() {
+  const [values, setValues]   = useState({})
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving]   = useState(false)
+  const [message, setMessage] = useState(null)   // { kind, text }
+  const [dirty, setDirty]     = useState({})     // keys changed since load
 
-  // ── Load content on mount ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (hasSupabase) {
-      fetch(`${SUPABASE_URL}/rest/v1/site_content?select=key,value`, {
-        headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
-      })
-        .then(r => r.json())
-        .then(rows => {
-          if (Array.isArray(rows)) {
-            const obj = {}
-            rows.forEach(({ key, value }) => { obj[key] = value })
-            setValues(obj)
-          }
-        })
-        .catch(() => setValues(loadLocal()))
-        .finally(() => setLoading(false))
-    } else {
-      setValues(loadLocal())
+  useEffect(() => { load() }, [])
+
+  async function load() {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('site_content')
+      .select('key, value')
+
+    if (error) {
+      setMessage({ kind: 'error', text: 'Could not load: ' + error.message })
       setLoading(false)
+      return
     }
-  }, [])
 
-  const handleChange = (key, val) => setValues(prev => ({ ...prev, [key]: val }))
+    const map = { ...CONTENT_DEFAULTS }
+    ;(data || []).forEach((r) => {
+      if (r && r.key != null && r.value != null) map[r.key] = r.value
+    })
+    setValues(map)
+    setDirty({})
+    setLoading(false)
+  }
 
-  // ── Save current section ──────────────────────────────────────────────────
-  const handleSave = async (section) => {
+  function change(key, val) {
+    setValues((v) => ({ ...v, [key]: val }))
+    setDirty((d) => ({ ...d, [key]: true }))
+    setMessage(null)
+  }
+
+  async function saveAll() {
+    const keys = Object.keys(dirty)
+    if (keys.length === 0) {
+      setMessage({ kind: 'info', text: 'Nothing has been changed.' })
+      return
+    }
+
     setSaving(true)
-    setSaveMsg(null)
+    setMessage(null)
 
-    const sectionFields = SCHEMA.find(s => s.section === section)?.fields || []
-    const updates = sectionFields.map(f => ({ key: f.key, value: values[f.key] ?? '' }))
+    const rows = keys.map((k) => ({ key: k, value: values[k] ?? '' }))
 
-    if (hasSupabase) {
-      // Save each field to Supabase via upsert
-      try {
-        const SERVICE_KEY = adminSecret // use admin secret as service role proxy
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/site_content`, {
-          method: 'POST',
-          headers: {
-            'apikey':          SUPABASE_ANON,
-            'Authorization':   `Bearer ${SUPABASE_ANON}`,
-            'Content-Type':    'application/json',
-            'Prefer':          'resolution=merge-duplicates',
-          },
-          body: JSON.stringify(updates.map(u => ({
-            key:        u.key,
-            value:      u.value,
-            label:      u.key,
-            section:    section,
-            type:       'text',
-            updated_at: new Date().toISOString(),
-          }))),
-        })
-        if (res.ok || res.status === 201 || res.status === 204) {
-          setSaveMsg('✓ Saved to Supabase — changes are live on your website')
-        } else {
-          // Fallback to localStorage
-          saveLocal(values)
-          setSaveMsg('✓ Saved locally — connect Supabase to publish to live site')
-        }
-      } catch {
-        saveLocal(values)
-        setSaveMsg('✓ Saved locally (Supabase offline)')
-      }
-    } else {
-      // No Supabase — save to localStorage
-      saveLocal(values)
-      setSaveMsg('✓ Saved locally — add VITE_SUPABASE_URL to publish to live site')
-    }
+    // Needs the UNIQUE constraint added by sql/007_schema_alignment.sql
+    const { error } = await supabase
+      .from('site_content')
+      .upsert(rows, { onConflict: 'key' })
 
     setSaving(false)
-    setTimeout(() => setSaveMsg(null), 4000)
+
+    if (error) {
+      const permission =
+        error.message.toLowerCase().includes('policy') ||
+        error.message.toLowerCase().includes('permission') ||
+        error.code === '42501'
+
+      setMessage({
+        kind: 'error',
+        text: permission
+          ? 'Not allowed. Your admin session has expired -- sign out and sign in again.'
+          : 'Save failed: ' + error.message,
+      })
+      return
+    }
+
+    setDirty({})
+    setMessage({
+      kind: 'ok',
+      text: 'Saved. Open the site and press Ctrl+Shift+R to see the change.',
+    })
   }
 
-  const activeSchema = SCHEMA.find(s => s.section === activeTab)
-  const inp = {
-    ...inputStyle,
-    background: C.white,
-    color: C.textBody,
-    border: `1.5px solid ${C.border}`,
-    fontSize: '0.97rem',
-    padding: '9px 12px',
+  if (loading) {
+    return <p style={{ color: C.textMuted, padding: 24 }}>Loading content...</p>
   }
 
-  if (loading) return (
-    <div style={{ padding: '3rem', textAlign: 'center', ...mono, fontSize: '0.8rem', color: C.textMuted }}>
-      Loading content…
-    </div>
-  )
+  const changedCount = Object.keys(dirty).length
 
   return (
-    <div>
-      {/* Mode indicator */}
-      <div style={{ background: hasSupabase ? 'rgba(30,138,74,0.08)' : 'rgba(198,154,74,0.08)', border: `1px solid ${hasSupabase ? 'rgba(30,138,74,0.2)' : 'rgba(198,154,74,0.3)'}`, borderRadius: 4, padding: '0.7rem 1rem', marginBottom: '1.5rem', ...mono, fontSize: '0.7rem', color: hasSupabase ? '#1E5A30' : '#7A5C10' }}>
-        {hasSupabase
-          ? '🟢 Connected to Supabase — changes you save will go live on acadmify.com immediately'
-          : '🟡 Local mode — changes are saved in your browser. Add VITE_SUPABASE_URL to Vercel environment variables to publish to live site.'}
-      </div>
+    <div style={{ paddingBottom: 90 }}>
+      {SECTIONS.map((section) => (
+        <div key={section.title} style={{ marginBottom: 34 }}>
+          <h3 style={{
+            color: C.maroon,
+            fontSize: 17,
+            margin: '0 0 14px',
+            paddingBottom: 7,
+            borderBottom: '1px solid ' + C.gray3,
+          }}>
+            {section.title}
+          </h3>
 
-      <div style={{ display: 'flex', gap: 0 }}>
-        {/* Left sidebar — section tabs */}
-        <div style={{ width: 180, flexShrink: 0, borderRight: `1px solid ${C.border}`, paddingRight: '1rem' }}>
-          <div style={{ ...mono, fontSize: '0.6rem', color: C.textMuted, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Sections</div>
-          {SCHEMA.map(s => (
-            <div key={s.section} onClick={() => setActiveTab(s.section)} style={{
-              padding: '8px 12px', borderRadius: 4, cursor: 'pointer', marginBottom: 4,
-              background: activeTab === s.section ? 'rgba(122,30,30,0.08)' : 'transparent',
-              border: activeTab === s.section ? `1px solid ${C.border}` : '1px solid transparent',
-              ...serif, fontSize: '0.95rem', color: activeTab === s.section ? C.maroon : C.textMuted,
-              fontWeight: activeTab === s.section ? 600 : 400,
-            }}>
-              {s.label}
-            </div>
-          ))}
-        </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 16,
+          }}>
+            {section.fields.map(([key, labelText, kind]) => (
+              <div key={key} style={{ gridColumn: kind === 'area' ? '1 / -1' : 'auto' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: 12,
+                  color: C.textMuted,
+                  marginBottom: 5,
+                }}>
+                  {labelText}
+                  {dirty[key] && (
+                    <span style={{ color: C.maroon, marginLeft: 6 }}>* unsaved</span>
+                  )}
+                </label>
 
-        {/* Right — field editor */}
-        <div style={{ flex: 1, paddingLeft: '2rem' }}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ ...serif, fontSize: '1.5rem', fontWeight: 600, color: C.maroon, marginBottom: '0.25rem' }}>
-              {activeSchema?.label}
-            </h3>
-            <p style={{ ...serif, fontSize: '0.92rem', color: C.textMuted }}>{activeSchema?.desc}</p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {activeSchema?.fields.map(field => (
-              <div key={field.key}>
-                <label style={{ ...labelStyle, marginBottom: 6 }}>{field.label}</label>
-                {field.type === 'textarea' ? (
+                {kind === 'area' ? (
                   <textarea
-                    rows={4}
-                    value={values[field.key] ?? ''}
-                    onChange={e => handleChange(field.key, e.target.value)}
-                    style={{ ...inp, resize: 'vertical', width: '100%', boxSizing: 'border-box' }}
+                    style={{ ...inputStyle, minHeight: 78, resize: 'vertical' }}
+                    value={values[key] ?? ''}
+                    onChange={(e) => change(key, e.target.value)}
                   />
                 ) : (
                   <input
-                    type={field.type === 'number' ? 'number' : 'text'}
-                    value={values[field.key] ?? ''}
-                    onChange={e => handleChange(field.key, e.target.value)}
-                    style={{ ...inp, width: '100%', boxSizing: 'border-box' }}
+                    style={inputStyle}
+                    value={values[key] ?? ''}
+                    onChange={(e) => change(key, e.target.value)}
                   />
                 )}
               </div>
             ))}
           </div>
-
-          {/* Save button */}
-          <div style={{ marginTop: '1.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button
-              onClick={() => handleSave(activeTab)}
-              disabled={saving}
-              style={{ ...btn('primary'), opacity: saving ? 0.6 : 1 }}
-            >
-              {saving ? 'Saving…' : `Save ${activeSchema?.label} →`}
-            </button>
-            {saveMsg && (
-              <span style={{ ...mono, fontSize: '0.7rem', color: saveMsg.startsWith('✓') ? '#1E6B3A' : '#C0392B' }}>
-                {saveMsg}
-              </span>
-            )}
-          </div>
-
-          <div style={{ marginTop: '1rem', ...mono, fontSize: '0.62rem', color: C.textMuted }}>
-            Changes in one section do not affect other sections.
-          </div>
         </div>
+      ))}
+
+      {/* Sticky save bar */}
+      <div style={{
+        position: 'fixed',
+        left: 0, right: 0, bottom: 0,
+        background: C.white,
+        borderTop: '1px solid ' + C.gray3,
+        padding: '12px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        flexWrap: 'wrap',
+        zIndex: 40,
+      }}>
+        <button
+          onClick={saveAll}
+          disabled={saving || changedCount === 0}
+          style={{
+            padding: '11px 26px',
+            fontSize: 15,
+            fontFamily: 'inherit',
+            background: changedCount === 0 ? C.gray3 : C.maroon,
+            color: changedCount === 0 ? C.textMuted : C.white,
+            border: 'none',
+            borderRadius: 2,
+            cursor: changedCount === 0 ? 'default' : 'pointer',
+          }}
+        >
+          {saving
+            ? 'Saving...'
+            : changedCount === 0
+              ? 'No changes'
+              : 'Save ' + changedCount + ' change' + (changedCount > 1 ? 's' : '')}
+        </button>
+
+        {message && (
+          <span style={{
+            fontSize: 14,
+            color: message.kind === 'error' ? '#B02020'
+                 : message.kind === 'ok'    ? '#1E6B3A'
+                 : C.textMuted,
+          }}>
+            {message.text}
+          </span>
+        )}
       </div>
     </div>
   )

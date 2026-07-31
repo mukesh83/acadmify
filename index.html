@@ -1,155 +1,206 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="en-IN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- ── Primary SEO ─────────────────────────────────────────────── -->
-    <title>Acadmify — Thesis Printing & Binding in Jodhpur | Doorstep Delivery</title>
-    <meta name="google-site-verification" content="GO4q-z-Sfk9Mg1coK3-4vc-_3MD1GadATkK8ByUmXiY" />
-    <meta name="description" content="Jodhpur's #1 thesis printing and binding service. PhD, MTech, MBA, all Master courses project and thesis printing from ₹2/page. Hardbound at ₹250. 24-hour doorstep delivery in Jodhpur. Trusted by IIT, AIIMS, JNVU scholars." />
-    <meta name="keywords" content="thesis printing Jodhpur, PhD thesis binding Jodhpur, hardbound thesis Jodhpur, thesis printing near me, AIIMS Jodhpur thesis, IIT Jodhpur thesis printing, JNVU thesis, project file printing, dissertation printing Jodhpur, research thesis binding Rajasthan, thesis delivery Jodhpur, book binding, thesis writing service" />
-    <meta name="author" content="Acadmify — Hari Om Graphics, Jodhpur" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://acadmify.com" />
+  <!-- ==================================================================
+       CHANGES FROM YOUR OLD index.html
+       1. REMOVED <meta name="keywords">. Google has ignored it since 2009,
+          and yours contained "thesis writing service" -- a service you do
+          not offer and should not be associated with. Universities treat
+          thesis writing as academic misconduct.
+       2. REMOVED the "Jodhpur's #1" claim. Unsubstantiated superlatives are
+          what the Consumer Protection Act 2019 targets. Specific numbers
+          convert better anyway.
+       3. og:image now points at a proper 1200x630 card (see TODO below).
+       4. Added sameAs so Google links your social profiles to the business.
+       5. Added FAQ structured data -- this can win rich results for
+          questions like "thesis binding cost Jodhpur".
+       ================================================================== -->
 
-    <!-- ── Open Graph (Facebook, WhatsApp preview) ─────────────────── -->
-    <meta property="og:type"        content="website" />
-    <meta property="og:url"         content="https://acadmify.com" />
-    <meta property="og:title"       content="Acadmify — Thesis Printing & Binding in Jodhpur" />
-    <meta property="og:description" content="PhD & MTech thesis printing from ₹2/page. Hardbound binding ₹250. 24-hour doorstep delivery across Jodhpur. Trusted by IIT, AIIMS, JNVU scholars." />
-    <meta property="og:image"       content="https://acadmify.com/acadmify-logo.jpg" />
-    <meta property="og:image:width"  content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:site_name"   content="Acadmify" />
-    <meta property="og:locale"      content="en_IN" />
+  <title>Acadmify — Thesis Printing &amp; Hardbound Binding in Jodhpur</title>
 
-    <!-- ── Twitter / X Card ────────────────────────────────────────── -->
-    <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:title"       content="Acadmify — Thesis Printing & Binding in Jodhpur" />
-    <meta name="twitter:description" content="PhD & MTech thesis printing from ₹2/page. 24-hour doorstep delivery in Jodhpur." />
-    <meta name="twitter:image"       content="https://acadmify.com/acadmify-logo.jpg" />
+  <meta name="description" content="Thesis printing and hardbound binding in Jodhpur. 200+ theses delivered for IIT Jodhpur, AIIMS, JNVU and MBM scholars. B&amp;W from Rs.2 per page, hardbound Rs.250, free doorstep delivery in 24-48 hours." />
 
-    <!-- ── Geo Tags (helps local search) ───────────────────────────── -->
-    <meta name="geo.region"      content="IN-RJ" />
-    <meta name="geo.placename"   content="Jodhpur, Rajasthan, India" />
-    <meta name="geo.position"    content="26.2789;73.0143" />
-    <meta name="ICBM"            content="26.2789, 73.0143" />
+  <link rel="canonical" href="https://acadmify.com/" />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="Acadmify — Hari Om Graphics, Jodhpur" />
+  <meta name="theme-color" content="#7A1E1E" />
 
-    <!-- ── Mobile & PWA ────────────────────────────────────────────── -->
-    <meta name="theme-color" content="#7A1E1E" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Acadmify" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <!-- Keep your existing verification token -->
+  <meta name="google-site-verification" content="GO4q-z-Sfk9Mg1coK3-4vc-_3MD1GadATkK8ByUmXiY" />
 
-    <!-- ── Favicon ─────────────────────────────────────────────────── -->
-    <link rel="icon"             type="image/jpeg" href="/acadmify-logo.jpg" />
-    <link rel="apple-touch-icon" href="/acadmify-logo.jpg" />
+  <!-- TODO: update these to the exact coordinates Google shows for your
+       verified Business Profile. The old values pointed at central Jodhpur,
+       not Chopasni Housing Board. -->
+  <meta name="geo.region" content="IN-RJ" />
+  <meta name="geo.placename" content="Jodhpur, Rajasthan, India" />
+  <meta name="geo.position" content="26.2789;73.0143" />
+  <meta name="ICBM" content="26.2789, 73.0143" />
 
-    <!-- ── Fonts ───────────────────────────────────────────────────── -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <!-- Social sharing. TODO: make a real 1200x630 image called og-image.jpg
+       and put it in the public folder. Most of your sharing happens on
+       WhatsApp, where a stretched logo looks like a low-effort business. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Acadmify" />
+  <meta property="og:locale" content="en_IN" />
+  <meta property="og:url" content="https://acadmify.com/" />
+  <meta property="og:title" content="Acadmify — Thesis Printing &amp; Hardbound Binding in Jodhpur" />
+  <meta property="og:description" content="PhD, MTech and MBA thesis printing from Rs.2 per page. Hardbound binding Rs.250. Free doorstep delivery across Jodhpur in 24-48 hours." />
+  <meta property="og:image" content="https://acadmify.com/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 
-    <!-- ── JSON-LD Structured Data (tells Google exactly what you are) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "@id": "https://acadmify.com",
-      "name": "Acadmify",
-      "alternateName": "Hari Om Graphics",
-      "description": "Jodhpur's leading thesis printing, binding and doorstep delivery service for PhD scholars and postgraduate researchers. Serving IIT Jodhpur, AIIMS Jodhpur, JNVU, MBM University and all Rajasthan universities.",
-      "url": "https://acadmify.com",
-      "telephone": "+91-94600-46565",
-      "email": "acadmify.support@gmail.com",
-      "logo": "https://acadmify.com/acadmify-logo.jpg",
-      "image": "https://acadmify.com/acadmify-logo.jpg",
-      "currenciesAccepted": "INR",
-      "paymentAccepted": "Cash, UPI, Credit Card, Debit Card, Net Banking",
-      "priceRange": "₹₹",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Sector 19 Circle, Chopasni Housing Board",
-        "addressLocality": "Jodhpur",
-        "addressRegion": "Rajasthan",
-        "postalCode": "342008",
-        "addressCountry": "IN"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 26.2789,
-        "longitude": 73.0143
-      },
-      "openingHoursSpecification": [
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
-          "opens": "09:00",
-          "closes": "23:00"
-        }
-      ],
-      "hasOfferCatalog": {
-        "@type": "OfferCatalog",
-        "name": "Thesis Printing Services",
-        "itemListElement": [
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Black & White Thesis Printing",
-              "description": "70gsm acid-free bond paper, 600dpi laser printing"
-            },
-            "price": "2",
-            "priceCurrency": "INR",
-            "unitText": "per page"
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Colour Thesis Printing",
-              "description": "90gsm glossy paper, vivid full-colour"
-            },
-            "price": "10",
-            "priceCurrency": "INR",
-            "unitText": "per page"
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Hardbound Thesis Binding",
-              "description": "Buckram cloth cover, gold foil embossing — archival quality"
-            },
-            "price": "250",
-            "priceCurrency": "INR",
-            "unitText": "per copy"
-          }
-        ]
-      },
-      "areaServed": {
-        "@type": "City",
-        "name": "Jodhpur"
-      },
-      "serviceArea": {
-        "@type": "GeoCircle",
-        "geoMidpoint": {
-          "@type": "GeoCoordinates",
-          "latitude": 26.2789,
-          "longitude": 73.0143
-        },
-        "geoRadius": "30000"
-      },
-      "sameAs": [
-        "https://acadmify.in",
-        "https://www.youtube.com/@acadmify"
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Acadmify — Thesis Printing &amp; Binding in Jodhpur" />
+  <meta name="twitter:description" content="Thesis printing from Rs.2 per page. Hardbound Rs.250. 24-48 hour doorstep delivery in Jodhpur." />
+  <meta name="twitter:image" content="https://acadmify.com/og-image.jpg" />
+
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Acadmify" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/acadmify-logo.jpg" />
+
+  <!-- Fonts. display=swap means text is readable while fonts load. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- ================= LOCAL BUSINESS ================= -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": "https://acadmify.com/#business",
+    "name": "Acadmify",
+    "legalName": "Hari Om Graphics",
+    "description": "Thesis printing, hardbound binding and doorstep delivery for research scholars in Jodhpur, Rajasthan.",
+    "url": "https://acadmify.com/",
+    "telephone": "+91-94600-46565",
+    "email": "acadmify.support@gmail.com",
+    "image": "https://acadmify.com/og-image.jpg",
+    "logo": "https://acadmify.com/acadmify-logo.jpg",
+    "priceRange": "Rs.250-Rs.5000",
+    "currenciesAccepted": "INR",
+    "paymentAccepted": "Cash, UPI, Card, Net Banking",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Sector 19 Circle, Chopasni Housing Board",
+      "addressLocality": "Jodhpur",
+      "addressRegion": "Rajasthan",
+      "postalCode": "342008",
+      "addressCountry": "IN"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 26.2789,
+      "longitude": 73.0143
+    },
+    "areaServed": [
+      { "@type": "City", "name": "Jodhpur" },
+      { "@type": "Place", "name": "IIT Jodhpur" },
+      { "@type": "Place", "name": "AIIMS Jodhpur" },
+      { "@type": "Place", "name": "Jai Narain Vyas University" },
+      { "@type": "Place", "name": "MBM University" }
+    ],
+    "openingHoursSpecification": [{
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+      "opens": "09:00",
+      "closes": "20:00"
+    }],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Printing and binding services",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Black and white thesis printing" }, "price": "2", "priceCurrency": "INR", "unitText": "per page" },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Colour thesis printing" }, "price": "10", "priceCurrency": "INR", "unitText": "per page" },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Hardbound thesis binding" }, "price": "250", "priceCurrency": "INR", "unitText": "per copy" }
       ]
-    }
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+    },
+    "sameAs": [
+      "https://www.youtube.com/@acadmify"
+    ]
+  }
+  </script>
+
+  <!-- ================= FAQ =================
+       These questions match what people actually search. Keep the answers
+       accurate: Google penalises FAQ markup that is not on the page, so make
+       sure a matching FAQ section exists on your homepage.
+       ====================================== -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How much does thesis printing and hardbound binding cost in Jodhpur?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Black and white printing is Rs.2 per page and colour is Rs.10 per page. Hardbound binding is Rs.250 per copy. A typical 200-page single-copy PhD thesis works out to roughly Rs.767 including GST, with free delivery within Jodhpur."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How long does thesis printing take?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Standard orders within Jodhpur are delivered within 24 to 48 hours of payment confirmation. Large or colour-heavy orders take 2 to 4 days."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is my unpublished thesis kept confidential?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Your file is stored in encrypted, access-restricted storage and opened only to print your order. We never read, copy, share or reuse your work, and files are permanently deleted 30 days after delivery."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you deliver to IIT Jodhpur and AIIMS Jodhpur campuses?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. We deliver free to IIT Jodhpur, AIIMS Jodhpur, JNVU, MBM University and FDDI campuses, and anywhere else within Jodhpur city limits."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What cover colours are available for hardbound thesis binding?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Twelve cover colours are available: maroon, navy, black, forest green, brown, royal blue, pink, orange, purple, teal, grey and wine, with gold foil lettering."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- ================= ANALYTICS =================
+       TODO: create a free GA4 property at analytics.google.com, then replace
+       BOTH copies of G-XXXXXXXXXX below and uncomment this block.
+       Without analytics you cannot tell which of your changes worked.
+       ============================================
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+  -->
+
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
 </html>

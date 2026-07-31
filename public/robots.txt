@@ -1,12 +1,8 @@
-# Acadmify — robots.txt
-# Tells search engine crawlers which pages to index
-
 User-agent: *
 Allow: /
 
-# Block admin panel from indexing
-Disallow: /#admin-mukesh
-Disallow: /#admin
+# The admin panel is a hash route (#admin-mukesh). Crawlers never see hash
+# fragments, so there is nothing to block here -- which is exactly why the
+# admin panel needs a real login rather than a hidden URL.
 
-# Sitemap location
 Sitemap: https://acadmify.com/sitemap.xml
