@@ -1,83 +1,68 @@
-import { C } from '../constants'
-import { mono, serif } from '../utils/styles'
+import { useEffect, useState } from 'react'
+import { Link, useLocation } from '../lib/router.jsx'
+import { useContent } from '../lib/content.jsx'
+import { IconMenu, IconClose } from './Icons.jsx'
 
-export default function Navbar({ page, setPage, adminIn }) {
+const LINKS = [
+  ['/', 'Home'],
+  ['/upload', 'Upload thesis'],
+  ['/track', 'Track order'],
+  ['/contact', 'Contact'],
+]
+
+export default function Navbar() {
+  const { path } = useLocation()
+  const c = useContent()
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => setOpen(false), [path])
+
+  useEffect(() => {
+    if (!open) return undefined
+    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  const announcement = c('announcement_text')
+
   return (
-    <nav style={{
-      background: '#FFFFFF',
-      borderBottom: '1px solid ' + C.border,
-      padding: '0 2.5rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      height: 70,
-      position: 'sticky',
-      top: 0,
-      zIndex: 50,
-      boxShadow: '0 1px 8px rgba(122,30,30,0.07)',
-    }}>
+    <>
+      {announcement && <div className="announce">{announcement}</div>}
+      <header className="site-header">
+        <div className="container nav">
+          <Link to="/" className="brand">
+            <img src="/logo.png" width="158" height="48" alt="Acadmify — Print, Bind, Submit" />
+          </Link>
 
-      {/* ── Logo — actual Acadmify image ─────────────────────────── */}
-      <div
-        onClick={() => setPage('home')}
-        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-      >
-        <img
-          src="/acadmify-logo.jpg"
-          alt="Acadmify — Print Bind Submit"
-          style={{
-            height: 48,        // fits navbar height neatly
-            width: 'auto',
-            display: 'block',
-            objectFit: 'contain',
-          }}
-        />
-      </div>
-
-      {/* ── Nav Links ────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-        {[
-          ['home',   'Home'],
-          ['upload', 'Upload Thesis'],
-          ['track',  'Track Order'],
-        ].map(([p, label]) => (
-          <span
-            key={p}
-            onClick={() => setPage(p)}
-            style={{
-              cursor: 'pointer',
-              ...serif,
-              fontSize: '1.05rem',
-              color: page === p ? C.maroon : C.textMuted,
-              fontWeight: page === p ? 600 : 400,
-              borderBottom: page === p ? '2px solid ' + C.maroon : '2px solid transparent',
-              paddingBottom: 2,
-              transition: 'all 0.15s',
-            }}
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-expanded={open}
+            aria-controls="site-menu"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            onClick={() => setOpen((o) => !o)}
           >
-            {label}
-          </span>
-        ))}
+            {open ? <IconClose size={26} /> : <IconMenu size={26} />}
+          </button>
 
-        {/* Admin button — hidden (access via /#admin-mukesh) */}
-        {adminIn && (
-          <span
-            onClick={() => setPage('admin')}
-            style={{
-              ...mono,
-              cursor: 'pointer',
-              fontSize: '0.7rem',
-              letterSpacing: '0.05em',
-              color: '#fff',
-              background: C.maroon,
-              padding: '6px 14px',
-              borderRadius: 3,
-            }}
+          <nav
+            id="site-menu"
+            className={'nav-links' + (open ? ' is-open' : '')}
+            aria-label="Main"
+            onClick={(e) => e.target.closest('a') && setOpen(false)}
           >
-            Admin Panel
-          </span>
-        )}
-      </div>
-    </nav>
+            {LINKS.map(([to, label]) => (
+              <Link key={to} to={to} aria-current={path === to ? 'page' : undefined}>
+                {label}
+              </Link>
+            ))}
+            <Link to="/#quote" className="btn btn-primary btn-sm nav-cta">
+              Get a price
+            </Link>
+          </nav>
+        </div>
+      </header>
+    </>
   )
 }

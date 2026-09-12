@@ -1,181 +1,99 @@
-// ============================================================================
-// src/components/Footer.jsx
-// Social icons, policy links, contact details, legal-name disclosure.
-//
-// Needs "react-icons" in package.json (see package.json.SNIPPET.txt).
-// Edit your social URLs in src/constants/index.js -> SOCIALS.
-// Leave a URL as '' and that icon will not be shown.
-// ============================================================================
+import { Link } from '../lib/router.jsx'
+import { useContent } from '../lib/content.jsx'
+import { usePricing } from '../lib/usePricing.js'
+import { useWaLink, telHref } from '../lib/whatsapp.js'
+import { IconInstagram, IconFacebook, IconYouTube, IconX, IconLinkedIn, IconTelegram } from './Icons.jsx'
 
-import { C, SOCIALS, BUSINESS } from '../constants'
-import {
-  FaWhatsapp, FaYoutube, FaInstagram,
-  FaFacebookF, FaLinkedinIn, FaXTwitter,
-} from 'react-icons/fa6'
+const SOCIALS = [
+  ['social_instagram', 'Instagram', IconInstagram],
+  ['social_facebook', 'Facebook', IconFacebook],
+  ['youtube_channel_url', 'YouTube', IconYouTube],
+  ['social_x', 'X (Twitter)', IconX],
+  ['social_linkedin', 'LinkedIn', IconLinkedIn],
+  ['social_telegram', 'Telegram', IconTelegram],
+]
 
-const ICONS = {
-  whatsapp:  FaWhatsapp,
-  youtube:   FaYoutube,
-  instagram: FaInstagram,
-  facebook:  FaFacebookF,
-  linkedin:  FaLinkedinIn,
-  twitter:   FaXTwitter,
-}
+export default function Footer() {
+  const c = useContent()
+  const p = usePricing()
+  const wa = useWaLink()
 
-export default function Footer({ setPage }) {
-  const active = SOCIALS.filter((s) => s.url && s.url.trim() !== '')
+  const socials = SOCIALS.filter(([key]) => /^https:\/\//.test(c(key)))
+  const services = [
+    'Thesis printing (B&W and colour)',
+    'Hardbound binding, gold or silver lettering',
+    p.formatting_fee > 0 ? 'Thesis formatting' : null,
+    'OHP transparent sheets',
+    p.softbound_enabled ? 'Book binding (softbound)' : null,
+    'Pickup or delivery in Jodhpur',
+  ].filter(Boolean)
 
-  // Works whether or not a setPage function was passed in.
-  const go = (p) => () => {
-    if (typeof setPage === 'function') setPage(p)
-    if (typeof window !== 'undefined') window.scrollTo(0, 0)
-  }
-
-  const linkStyle = {
-    color: 'rgba(255,255,255,0.82)',
-    textDecoration: 'none',
-    fontSize: 14,
-    display: 'block',
-    marginBottom: 9,
-    cursor: 'pointer',
-    background: 'none',
-    border: 'none',
-    padding: 0,
-    textAlign: 'left',
-    fontFamily: 'inherit',
-  }
-
-  const headStyle = {
-    color: C.white,
-    fontSize: 12,
-    letterSpacing: 1.3,
-    textTransform: 'uppercase',
-    marginBottom: 15,
-    fontWeight: 600,
-  }
+  const copyright = c('footer_copyright')
+  const gstin = c('gstin')
 
   return (
-    <footer style={{
-      background: C.maroon,
-      color: C.white,
-      padding: '52px 20px 26px',
-      marginTop: 'auto',
-    }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 36,
-          marginBottom: 40,
-        }}>
-
-          {/* Brand + social */}
-          <div>
-            <div style={{ fontSize: 25, marginBottom: 10 }}>acadmify</div>
-            <p style={{
-              color: 'rgba(255,255,255,0.78)',
-              fontSize: 14,
-              lineHeight: 1.65,
-              margin: 0,
-            }}>
-              Thesis printing, hardbound binding and doorstep
-              delivery for research scholars in Jodhpur.
-            </p>
-
-            {active.length > 0 && (
-              <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-                {active.map((s) => {
-                  const Icon = ICONS[s.id]
-                  if (!Icon) return null
-                  return (
-                    <a
-                      key={s.id}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={s.label}
-                      title={s.label}
-                      style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.12)',
-                        border: '1px solid rgba(255,255,255,0.28)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: C.white,
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <Icon size={16} />
-                    </a>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Services */}
-          <div>
-            <div style={headStyle}>Services</div>
-            <button style={linkStyle} onClick={go('upload')}>Upload Thesis</button>
-            <button style={linkStyle} onClick={go('track')}>Track Order</button>
-            <button style={linkStyle} onClick={go('home')}>Pricing</button>
-          </div>
-
-          {/* Policies */}
-          <div>
-            <div style={headStyle}>Policies</div>
-            <button style={linkStyle} onClick={go('privacy')}>Privacy Policy</button>
-            <button style={linkStyle} onClick={go('terms')}>Terms &amp; Conditions</button>
-            <button style={linkStyle} onClick={go('refund')}>Refund &amp; Cancellation</button>
-            <button style={linkStyle} onClick={go('shipping')}>Shipping &amp; Delivery</button>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <div style={headStyle}>Contact</div>
-            <a href={'tel:+' + BUSINESS.phoneRaw} style={linkStyle}>
-              {BUSINESS.phone}
-            </a>
-            <a href={'mailto:' + BUSINESS.email} style={linkStyle}>
-              {BUSINESS.email}
-            </a>
-            <p style={{
-              color: 'rgba(255,255,255,0.78)',
-              fontSize: 14,
-              lineHeight: 1.6,
-              marginTop: 12,
-              marginBottom: 0,
-            }}>
-              {BUSINESS.address1}<br />
-              {BUSINESS.address2}
-            </p>
-          </div>
-
+    <footer className="site-footer">
+      <div className="container footer-grid">
+        <div className="footer-brand">
+          <p className="footer-logo">acadmify</p>
+          <p className="footer-motto">Print <span aria-hidden="true">•</span> Bind <span aria-hidden="true">•</span> Submit</p>
+          <p>{c('footer_tagline')}</p>
+          {socials.length > 0 && (
+            <ul className="socials" aria-label="Acadmify on social media">
+              {socials.map(([key, label, Icon]) => (
+                <li key={key}>
+                  <a href={c(key)} target="_blank" rel="noopener noreferrer" aria-label={label} title={label}>
+                    <Icon size={18} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {/* Bottom bar */}
-        <div style={{
-          borderTop: '1px solid rgba(255,255,255,0.18)',
-          paddingTop: 20,
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          gap: 10,
-          fontSize: 13,
-          color: 'rgba(255,255,255,0.68)',
-        }}>
-          <span>
-            &copy; {new Date().getFullYear()} {BUSINESS.brand}. All rights reserved.
-          </span>
-          {/* This line prevents payment disputes: it explains why a bank
-              statement says HARI OM GRAPHICS when they paid Acadmify. */}
-          <span>A brand of {BUSINESS.legalName}, Jodhpur</span>
+        <div>
+          <h2 className="footer-h">Services</h2>
+          <ul className="footer-list">
+            {services.map((s) => <li key={s}>{s}</li>)}
+          </ul>
         </div>
 
+        <div>
+          <h2 className="footer-h">Links</h2>
+          <ul className="footer-list">
+            <li><Link to="/upload">Upload thesis</Link></li>
+            <li><Link to="/#quote">Price calculator</Link></li>
+            <li><Link to="/track">Track order</Link></li>
+            <li><Link to="/#faq">FAQ</Link></li>
+            <li><Link to="/contact">Contact &amp; location</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="footer-h">Policies</h2>
+          <ul className="footer-list">
+            <li><Link to="/privacy">Privacy policy</Link></li>
+            <li><Link to="/terms">Terms &amp; conditions</Link></li>
+            <li><Link to="/refund">Refunds &amp; cancellation</Link></li>
+            <li><Link to="/shipping">Shipping &amp; delivery</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="footer-h">Contact</h2>
+          <address className="footer-list">
+            <p>{c('contact_address')}</p>
+            <p><a href={telHref(c('contact_phone'))}>{c('contact_phone')}</a></p>
+            <p><a href={wa('Hello Acadmify!')} target="_blank" rel="noopener noreferrer">WhatsApp us</a></p>
+            <p><a href={'mailto:' + c('contact_email')}>{c('contact_email')}</a></p>
+            <p>{c('contact_hours')}</p>
+          </address>
+        </div>
+      </div>
+
+      <div className="container footer-bottom">
+        <span>{copyright.startsWith('©') ? copyright : '© ' + new Date().getFullYear() + ' ' + copyright}</span>
+        <span>A brand of Hari Om Graphics, Jodhpur{gstin ? ' · GSTIN ' + gstin : ''}</span>
       </div>
     </footer>
   )

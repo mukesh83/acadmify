@@ -1,59 +1,72 @@
-import { useState, useEffect } from 'react'
-import { DEMO_ORDERS } from './constants'
-import Navbar      from './components/Navbar'
-import Home        from './components/Home'
-import Upload      from './components/Upload'
-import Track       from './components/Track'
-import AdminLogin  from './components/AdminLogin'
-import Admin       from './components/Admin'
+// Decides which page to show for the current address.
+// Routes: /  /upload  /track  /contact  /privacy  /terms  /refund  /shipping  /admin
+import { lazy, Suspense, useEffect, useRef } from 'react'
+import { useLocation, navigate, scrollToTarget } from './lib/router.jsx'
+import { ContentProvider } from './lib/content.jsx'
+import Navbar from './components/Navbar.jsx'
+import Footer from './components/Footer.jsx'
+import WhatsAppFloat from './components/WhatsAppFloat.jsx'
+import Home from './pages/Home.jsx'
+import Upload from './pages/Upload.jsx'
+import Track from './pages/Track.jsx'
+import Contact from './pages/Contact.jsx'
+import Policy from './pages/Policy.jsx'
+import NotFound from './pages/NotFound.jsx'
+
+// The admin panel (and the Supabase library it needs) downloads only when /admin is opened
+const AdminApp = lazy(() => import('./pages/admin/AdminApp.jsx'))
+
+const PAGES = { '/': Home, '/upload': Upload, '/track': Track, '/contact': Contact }
+const POLICIES = ['privacy', 'terms', 'refund', 'shipping']
 
 export default function App() {
-  const [page,        setPage]        = useState('home')
-  const [adminIn,     setAdminIn]     = useState(false)
-  const [adminSecret, setAdminSecret] = useState(null)
-  const [orders,      setOrders]      = useState(DEMO_ORDERS)
+  const { path } = useLocation()
+  const firstRender = useRef(true)
 
-  // Secret URL access — visit acadmify.com/#admin-mukesh to open admin
+  // Old secret link acadmify.com/#admin-mukesh -> /admin
   useEffect(() => {
-    if (window.location.hash === '#admin-mukesh') {
-      setPage('adminlogin')
-    }
+    if (window.location.hash === '#admin-mukesh') navigate('/admin', { replace: true })
+    else if (window.location.hash) setTimeout(() => scrollToTarget(decodeURIComponent(window.location.hash.slice(1))), 300)
   }, [])
 
-  const addOrder = order => setOrders(prev => [order, ...prev])
+  // After moving to another page, put keyboard focus at the start of the content
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    const main = document.getElementById('main')
+    if (main) main.focus({ preventScroll: true })
+  }, [path])
 
-  const handleAdminLogin = (secret) => {
-    setAdminSecret(secret)
-    setAdminIn(true)
-    setPage('admin')
-  }
+  const isAdmin = path === '/admin' || path.startsWith('/admin/')
+  const policy = POLICIES.find((p) => path === '/' + p)
+  const Page = PAGES[path]
 
-  const handleAdminLogout = () => {
-    setAdminIn(false)
-    setAdminSecret(null)
-    setPage('home')
+  let page
+  if (isAdmin) {
+    page = (
+      <Suspense fallback={<p className="page container">Loading admin…</p>}>
+        <AdminApp />
+      </Suspense>
+    )
+  } else if (Page) {
+    page = <Page />
+  } else if (policy) {
+    page = <Policy which={policy} />
+  } else {
+    page = <NotFound />
   }
-useEffect(() => {
-  if (window.location.hash === '#admin-mukesh') {
-    setPage('adminlogin')
-  }
-}, [])
-  const showNavbar = page !== 'adminlogin' && page !== 'admin'
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFFFF', color: '#4A1A1A' }}>
-      {showNavbar && <Navbar page={page} setPage={setPage} adminIn={adminIn} />}
-      {page === 'home'       && <Home setPage={setPage} />}
-      {page === 'upload'     && <Upload setPage={setPage} addOrder={addOrder} />}
-      {page === 'track'      && <Track orders={orders} />}
-      {page === 'adminlogin' && <AdminLogin onLogin={handleAdminLogin} />}
-      {page === 'admin' && adminIn && (
-        <Admin
-          adminSecret={adminSecret}
-          onLogout={handleAdminLogout}
-          setPage={setPage}
-        />
-      )}
-    </div>
+    <ContentProvider>
+      {!isAdmin && <a className="skip-link" href="#main">Skip to content</a>}
+      {!isAdmin && <Navbar />}
+      <main id="main" tabIndex={-1}>
+        {page}
+      </main>
+      {!isAdmin && <Footer />}
+      {!isAdmin && path !== '/upload' && <WhatsAppFloat />}
+    </ContentProvider>
   )
 }

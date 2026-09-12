@@ -1,8 +1,5 @@
 User-agent: *
 Allow: /
-
-# The admin panel is a hash route (#admin-mukesh). Crawlers never see hash
-# fragments, so there is nothing to block here -- which is exactly why the
-# admin panel needs a real login rather than a hidden URL.
+Disallow: /admin
 
 Sitemap: https://acadmify.com/sitemap.xml
