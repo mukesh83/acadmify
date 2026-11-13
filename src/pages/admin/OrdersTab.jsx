@@ -41,10 +41,10 @@ function statusMessage(o, c) {
   }
 }
 
-function paymentMessage(o, c) {
-  const upi = c('upi_id')
-  return 'Amount due for ' + o.id + ': ' + rupees(o.total_amount) + '. ' +
-    (upi ? 'Pay by UPI to ' + upi + '.' : 'You can pay by UPI or cash. Reply here and we’ll share the details.')
+function paymentMessage(o) {
+  return 'Amount due for ' + o.id + ': ' + rupees(o.total_amount) + '. Please pay online to confirm your order: ' +
+    window.location.origin + '/track?id=' + encodeURIComponent(o.id) +
+    ' (enter the last 4 digits of your phone, then tap Pay).'
 }
 
 async function openSigned(bucket, path) {
@@ -256,7 +256,7 @@ function OrderCard({ o, c, onUpdate }) {
               WhatsApp: {STATUS_LABELS[o.status] || 'message'}
             </a>
             {o.payment_status !== 'paid' && o.status !== 'cancelled' && (
-              <a className="btn btn-ghost btn-sm" href={waLink(paymentMessage(o, c), o.customer_phone)} target="_blank" rel="noopener noreferrer">
+              <a className="btn btn-ghost btn-sm" href={waLink(paymentMessage(o), o.customer_phone)} target="_blank" rel="noopener noreferrer">
                 Payment message
               </a>
             )}

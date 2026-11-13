@@ -1,8 +1,8 @@
 // The four policy pages. Lines starting with "- " become bullet points.
-// These describe how Acadmify actually works (WhatsApp confirmation, UPI or cash,
-// Rapido rider paid on delivery). If anything changes, change it here.
+// These describe how Acadmify actually works (online payment by Razorpay required
+// to confirm an order, Rapido rider paid on delivery). If anything changes, change it here.
 // Working drafts, not legal advice.
-export const POLICY_UPDATED = '12 September 2026'
+export const POLICY_UPDATED = '13 November 2026'
 
 export const POLICY_TITLES = {
   privacy: 'Privacy policy',
@@ -33,11 +33,12 @@ export function getPolicy(which, { analytics = false, gstin = '' } = {}) {
           'If you share a link (for example Google Drive) instead of uploading, the file stays in your own account and you control who can open it.',
         ]],
         ['Payments', [
-          'We agree payment with you on WhatsApp, by UPI or cash. This website does not collect card, UPI or bank details.',
+          'Online payments are processed by Razorpay, a payment aggregator regulated by the Reserve Bank of India. You enter your UPI, card or bank details in Razorpay’s secure checkout, not on our website, and we never see or store them. We receive only whether the payment succeeded, its reference number, the amount and the method used.',
         ]],
         ['Who else sees your data', [
           '- A Rapido rider sees your name, phone number and address when you choose doorstep delivery.',
           '- A courier company sees the same when you choose courier delivery outside Jodhpur.',
+          '- Razorpay processes your payment and receives your name, phone number, email address and payment details.',
           '- Our hosting providers (Vercel, Render and Supabase) store data on our behalf.',
           '- WhatsApp (Meta) carries the messages you send us there.',
           analytics ? '- Google Analytics counts visits to this website (see Cookies below).' : null,
@@ -73,16 +74,17 @@ export function getPolicy(which, { analytics = false, gstin = '' } = {}) {
           'You confirm that the document you send is your own work, or that you have the right to have it printed, and that printing it does not breach your institution’s rules or anyone’s copyright.',
         ]],
         ['Orders and prices', [
-          'Prices are shown on this website and in your order summary, with GST shown separately. We confirm every order on WhatsApp before printing begins. If your file differs from the details you entered (for example a different page count), we will tell you the corrected price before you pay. A price we quote is valid for 7 days.',
+          'Prices are shown on this website and in your order summary, with GST shown separately. Your order is confirmed once you have paid for it online. If your file differs from the details you entered (for example a different page count), we tell you on WhatsApp before printing: you pay the difference if it costs more, and we refund the difference if it costs less.',
         ]],
         ['Your file', [
           'Unless you order formatting, we print exactly the file you supply: we do not change page order, margins, fonts, page size or content. Please check your file carefully before sending it. If you order formatting, please check and approve the formatted version before we print. Reprints caused by errors in a file you supplied or approved are chargeable.',
         ]],
         ['Turnaround', [
-          'Orders are usually ready in 24 to 48 hours after we confirm your order and payment. Large or complex orders can take longer, and we will tell you before you pay. Our shop is open every day, 5 PM to 11 PM.',
+          'Orders are usually ready in 24 to 48 hours after your payment is received. Large or complex orders can take longer, and we will tell you on WhatsApp. Our shop is open every day, 5 PM to 11 PM.',
         ]],
         ['Payment', [
-          'Full payment is required before printing begins. We share payment details on WhatsApp; you can pay by UPI or cash.',
+          'Full payment online is required to confirm your order. You pay when you place the order, or later from the Track page, by UPI, debit or credit card, net banking or wallet through Razorpay’s secure checkout. We do not start printing until payment is received.',
+          'Courier charges, and any difference in price found when we check your file, are paid separately; we tell you the amount and how to pay on WhatsApp. For doorstep delivery in Jodhpur you pay the Rapido rider’s fare directly to the rider.',
         ]],
         ['Delivery', [
           'Pickup from our shop is free. For doorstep delivery in Jodhpur we book a Rapido rider, and you pay the rider’s fare on delivery. Courier delivery outside Jodhpur is quoted on WhatsApp. See our Shipping & delivery policy.',
@@ -92,7 +94,7 @@ export function getPolicy(which, { analytics = false, gstin = '' } = {}) {
         ]],
         ['Confidentiality', ['We treat every document you send us as confidential. Our Privacy policy explains exactly how we store and delete your files.']],
         ['Governing law', ['These terms are governed by the laws of India. Disputes are subject to the jurisdiction of the courts at Jodhpur, Rajasthan.']],
-        ['Business name on payments', ['UPI payments to us may show our registered business name, HARI OM GRAPHICS.']],
+        ['Business name on payments', ['Your bank, card or UPI statement may show our registered business name, HARI OM GRAPHICS, or Razorpay.']],
       ],
     },
 
@@ -100,7 +102,7 @@ export function getPolicy(which, { analytics = false, gstin = '' } = {}) {
       description: 'When Acadmify cancels, reprints or refunds a thesis printing order, and how to ask.',
       sections: [
         ['Cancelling an order', [
-          'Before printing has started: cancel by WhatsApp or phone for a full refund of anything you have paid, no questions asked.',
+          'Before printing has started: cancel by WhatsApp or phone for a full refund of what you paid, no questions asked.',
           'After printing has started: we cannot cancel, because printed and bound work cannot be resold. If we have not yet started, we will tell you honestly.',
         ]],
         ['When we refund in full', [
@@ -123,7 +125,10 @@ export function getPolicy(which, { analytics = false, gstin = '' } = {}) {
           'WhatsApp +91 94600-46565 within 48 hours of delivery or pickup, with your order number and a photo of the problem. We reply the same day.',
         ]],
         ['How refunds are paid', [
-          'Approved refunds are paid back by UPI or bank transfer within 5 to 7 working days.',
+          'Refunds go back to the method you paid with (the same UPI account, card or bank account) through Razorpay. Once we approve a refund, banks usually credit it within 5 to 7 working days.',
+        ]],
+        ['Money deducted but order shows unpaid', [
+          'Please do not pay again. WhatsApp us your order number and the time you paid, and we will check it with Razorpay. If a payment failed after money left your account, your bank normally returns it automatically within 5 to 7 working days.',
         ]],
       ],
     },
@@ -138,10 +143,10 @@ export function getPolicy(which, { analytics = false, gstin = '' } = {}) {
           'We book a Rapido rider to bring your order to your door anywhere in Jodhpur, including IIT Jodhpur, AIIMS Jodhpur, JNVU, MBM University and FDDI. You pay the rider’s fare in cash on delivery.',
         ]],
         ['Outside Jodhpur', [
-          'We send orders across India by courier. Charges depend on weight and destination and are quoted on WhatsApp before you pay. Allow 3 to 6 working days for courier transit.',
+          'We send orders across India by courier. Charges depend on weight and destination; we quote them on WhatsApp and you pay them separately before dispatch. Allow 3 to 6 working days for courier transit.',
         ]],
         ['How long it takes', [
-          'Orders are usually ready in 24 to 48 hours after we confirm your order and payment. Large orders (several copies, 400+ pages, or colour-heavy) can take longer, and we will tell you before you pay.',
+          'Orders are usually ready in 24 to 48 hours after your payment is received. Large orders (several copies, 400+ pages, or colour-heavy) can take longer, and we will tell you on WhatsApp.',
         ]],
         ['Tracking', [
           'Your order number looks like ACD-2026-0012. Track it at acadmify.com/track with your order number and the last 4 digits of the phone number you ordered with. We also update you on WhatsApp.',

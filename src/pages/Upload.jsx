@@ -19,6 +19,7 @@ import Field from '../components/Field.jsx'
 import QuoteBreakdown from '../components/QuoteBreakdown.jsx'
 import { Book, CoverPicker, LetteringPicker } from '../components/HeroBook.jsx'
 import ConfidentialityNote from '../components/ConfidentialityNote.jsx'
+import PayOnline from '../components/PayOnline.jsx'
 import { IconUpload, IconFile, IconCheck, IconCopy, IconWhatsApp } from '../components/Icons.jsx'
 
 const MB = 1048576
@@ -105,6 +106,7 @@ export default function Upload() {
   const [failMsg, setFailMsg] = useState('')
   const [order, setOrder] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [paidNow, setPaidNow] = useState(false)
 
   const topRef = useRef(null)
   const countToken = useRef(0)
@@ -328,6 +330,7 @@ export default function Upload() {
     setCoverFile(null)
     setPageCount(null)
     setOrder(null)
+    setPaidNow(false)
     setErrors({})
     setStep(1)
     setPhase('form')
@@ -361,8 +364,8 @@ export default function Upload() {
     'Hello Acadmify! My order ' + order.orderId + ' was created, but the file upload did not finish. I will send my PDF here.'
   )
   const waDone = order && wa(
-    'Hello Acadmify! I have placed order ' + order.orderId + ': ' + orderSummary + '. Total ' + rupees(order.quote.total) +
-    '. Please confirm and share payment details.'
+    'Hello Acadmify! I have placed order ' + order.orderId + ': ' + orderSummary + '. Total ' + rupees(order.quote.total) + '. ' +
+    (paidNow ? 'I have paid online.' : 'I have a question before paying.')
   )
 
   // ─── Screens ──────────────────────────────────────────────────────────────
@@ -370,16 +373,11 @@ export default function Upload() {
   const hasUploads = (fileMode === 'upload' && thesisFile) || coverFile
 
   if (phase === 'done' && order) {
-    const upiId = c('upi_id')
-    const upiLink = upiId
-      ? 'upi://pay?pa=' + encodeURIComponent(upiId) + '&pn=' + encodeURIComponent(c('upi_name')) +
-        '&am=' + order.quote.total + '&cu=INR&tn=' + encodeURIComponent('Acadmify ' + order.orderId)
-      : ''
     return (
       <div className="page page-narrow" ref={topRef}>
         <div className="done-card">
           <span className="done-badge" aria-hidden="true"><IconCheck size={30} /></span>
-          <h1>Order placed</h1>
+          <h1>{paidNow ? 'Order confirmed' : 'Order saved: one step left'}</h1>
           <p className="done-label">Your order number</p>
           <p className="order-id num">
             {order.orderId}
@@ -387,20 +385,30 @@ export default function Upload() {
               <IconCopy size={16} /> {copied ? 'Copied' : 'Copy'}
             </button>
           </p>
-          <p>Total <strong className="num">{rupees(order.quote.total)}</strong>. Nothing to pay yet.</p>
-
-          <a className="btn btn-wa btn-lg btn-block" href={waDone} target="_blank" rel="noopener noreferrer"
-            onClick={() => trackEvent('whatsapp_click', { place: 'order_done' })}>
-            <IconWhatsApp size={20} /> Send order details on WhatsApp
-          </a>
-          {upiLink && (
-            <a className="btn btn-outline btn-block" href={upiLink}>Pay {rupees(order.quote.total)} by UPI</a>
+          {!paidNow && (
+            <p>
+              Pay <strong className="num">{rupees(order.quote.total)}</strong> online to confirm your order. We start printing once
+              payment is received.
+            </p>
           )}
+          <PayOnline orderId={order.orderId} auth={{ clientToken: order.clientToken }} total={order.quote.total}
+            customer={{ name: f.name.trim(), email: f.email.trim(), phone: f.phone.trim() }}
+            onPaid={() => setPaidNow(true)}
+            fallback={<p className="note-warn">Online payment is not available right now. Please message us on WhatsApp to pay for this order.</p>} />
+
+          <a className={'btn btn-block ' + (paidNow ? 'btn-wa btn-lg' : 'btn-outline')} href={waDone} target="_blank" rel="noopener noreferrer"
+            onClick={() => trackEvent('whatsapp_click', { place: 'order_done' })}>
+            <IconWhatsApp size={20} /> {paidNow ? 'Send order details on WhatsApp' : 'Questions? Ask us on WhatsApp'}
+          </a>
 
           <h2>What happens next</h2>
           <ol className="next-steps">
-            <li>We check your file and confirm your order on WhatsApp.</li>
-            <li>We share payment details there (UPI or cash).</li>
+            <li>
+              {paidNow
+                ? 'Payment received, so your order is confirmed.'
+                : 'Pay online to confirm your order. If you leave now, you can pay later from the Track page.'}
+            </li>
+            <li>We check your file. If anything differs from your order (for example the page count), we tell you on WhatsApp and settle the difference.</li>
             <li>We print and bind your thesis. Usually ready in 24–48 hours.</li>
             <li>
               {f.deliveryMethod === 'pickup'
@@ -492,7 +500,7 @@ export default function Upload() {
       <div className="container">
         <header className="page-head">
           <h1>Upload your thesis</h1>
-          <p>Three short steps. Nothing to pay now: we confirm on WhatsApp first.</p>
+          <p>Three short steps, then pay securely online to confirm your order.</p>
         </header>
 
         <ol className="stepper" aria-label="Order progress">
@@ -654,7 +662,7 @@ export default function Upload() {
                       <span>
                         Format my thesis before printing ({rupees(p.formatting_fee)} per thesis)
                         <span className="hint">
-                          We’ll discuss what you need on WhatsApp. The page count can change after formatting, so we confirm the final price before you pay.
+                          We’ll discuss what you need on WhatsApp. If the page count changes after formatting, we settle the difference with you on WhatsApp.
                         </span>
                       </span>
                     </label>
@@ -767,9 +775,9 @@ export default function Upload() {
 
               <div className="form-actions">
                 <button type="button" className="btn btn-ghost" onClick={() => back()}>Back</button>
-                <button type="button" className="btn btn-primary btn-lg" onClick={submit}>Place order</button>
+                <button type="button" className="btn btn-primary btn-lg" onClick={submit}>Place order and pay</button>
               </div>
-              <p className="hint">Nothing to pay now. We check your file and confirm the price on WhatsApp before printing.</p>
+              <p className="hint">On the next screen you pay online (UPI, card, net banking or wallet). We start printing once payment is received.</p>
             </div>
 
             <aside className="form-aside" aria-label="Your price">

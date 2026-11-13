@@ -65,12 +65,10 @@ const GROUPS = [
     ['youtube_video2_id', 'Video 2'], ['youtube_video2_title', 'Video 2 title'], area('youtube_video2_desc', 'Video 2 description'),
     ['youtube_video3_id', 'Video 3'], ['youtube_video3_title', 'Video 3 title'], area('youtube_video3_desc', 'Video 3 description'),
   ]],
-  ['Footer, GST and payment', [
+  ['Footer and GST', [
     area('footer_tagline', 'Footer tagline'),
     ['footer_copyright', 'Copyright line'],
     ['gstin', 'GSTIN', null, 'Shown in the footer and policies when filled in'],
-    ['upi_id', 'UPI id', null, 'Leave empty: payment details are shared on WhatsApp'],
-    ['upi_name', 'UPI payee name'],
   ]],
   ['Social media links', [
     ['social_instagram', 'Instagram'],

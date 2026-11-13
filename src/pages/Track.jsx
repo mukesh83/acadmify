@@ -5,6 +5,7 @@ import { trackOrder, wakeServer } from '../lib/api.js'
 import { useWaLink } from '../lib/whatsapp.js'
 import { rupees, formatDate } from '../lib/format.js'
 import Field from '../components/Field.jsx'
+import PayOnline from '../components/PayOnline.jsx'
 import { IconCheck, IconWhatsApp } from '../components/Icons.jsx'
 
 const DOOR_FLOW = ['received', 'printing', 'binding', 'ready', 'dispatched', 'delivered']
@@ -53,7 +54,7 @@ export default function Track() {
     setBusy(true)
     const slowTimer = setTimeout(() => setSlow(true), 5000)
     try {
-      setOrder(await trackOrder(id, last4))
+      setOrder({ ...(await trackOrder(id, last4)), last4 })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -120,9 +121,18 @@ export default function Track() {
             </ol>
           )}
 
-          <p className="track-payment">
-            Payment: {order.paymentStatus === 'paid' ? <strong>Paid</strong> : 'Not paid yet. We share payment details on WhatsApp.'}
-          </p>
+          <div className="track-payment">
+            {order.paymentStatus === 'paid' ? (
+              <p>Payment: <strong>Paid</strong></p>
+            ) : order.status === 'cancelled' ? null : (
+              <>
+                <p>Payment: <strong>Not paid yet.</strong> Pay online to confirm your order. We start printing once payment is received.</p>
+                <PayOnline orderId={order.orderId} auth={{ phone: order.last4 }} total={order.total}
+                  onPaid={() => setOrder((o) => ({ ...o, paymentStatus: 'paid' }))}
+                  fallback={<p className="hint">Online payment is not available right now. Please message us on WhatsApp to pay.</p>} />
+              </>
+            )}
+          </div>
           <a className="btn btn-wa" href={wa('Hello Acadmify! I have a question about order ' + order.orderId + '.')} target="_blank" rel="noopener noreferrer">
             <IconWhatsApp size={18} /> Ask about this order
           </a>

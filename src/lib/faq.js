@@ -20,8 +20,8 @@ export function buildFaq(p, c) {
     },
     {
       q: 'How long does it take?',
-      a: 'Usually ready in 24–48 hours after we confirm your order and payment. Large or colour-heavy orders can take longer, ' +
-        'and we will tell you before you pay. For an urgent job, message us on WhatsApp first.',
+      a: 'Usually ready in 24–48 hours after your payment is received. Large or colour-heavy orders can take longer. ' +
+        'For an urgent job, message us on WhatsApp before you order.',
     },
     {
       q: 'Do you deliver? What does delivery cost?',
@@ -54,7 +54,9 @@ export function buildFaq(p, c) {
     },
     {
       q: 'How do I pay?',
-      a: 'After you order, we check your file and share payment details on WhatsApp (UPI or cash). Printing starts once payment is confirmed.',
+      a: 'Online, when you place your order: UPI, debit or credit card, net banking or wallet, through Razorpay\'s secure checkout. ' +
+        'Payment is required to confirm your order, and printing starts once it is received. If you could not pay at the time, ' +
+        'use the Track page to pay later. If your file turns out to need a different page count, we settle the difference on WhatsApp.',
     },
   ]
 

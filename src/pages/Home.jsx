@@ -78,7 +78,7 @@ export default function Home() {
   const steps = [
     ['Upload your PDF', 'Share your thesis PDF (or a Google Drive link), then choose copies, colour pages and cover colour.'],
     ['See your price', 'The exact total, GST included, is shown as you type.'],
-    ['Confirm on WhatsApp', 'We check your file and send payment details on WhatsApp (UPI or cash).'],
+    ['Pay online', 'Pay securely by UPI, card, net banking or wallet to confirm your order. We then check your file.'],
     ['Print & bind', 'Printed on ' + c('paper_spec').split('/')[0].trim() + ' and hardbound with gold or silver lettering. Usually ready in 24–48 hours.'],
     ['Pickup or delivery', 'Collect from our shop for free, or we send a Rapido rider anywhere in Jodhpur (fare paid on delivery).'],
   ]

@@ -35,7 +35,7 @@ export const CONTENT_DEFAULTS = {
 
   why_heading: 'Why scholars choose Acadmify',
   why1_title: 'Exact price upfront',
-  why1_text: 'See the full total, GST included, before you order. You pay only after we confirm your order on WhatsApp.',
+  why1_text: 'See the full total, GST included, before you order, then pay securely online by UPI, card or net banking.',
   why2_title: 'Printed on 100 gsm paper',
   why2_text: 'Clean black & white and colour printing, hardbound with gold or silver lettering on the cover and spine.',
   why3_title: 'Usually ready in 24–48 hours',
@@ -91,8 +91,6 @@ export const CONTENT_DEFAULTS = {
   footer_tagline: 'Thesis printing, hardbound binding and delivery for research scholars in Jodhpur.',
   footer_copyright: 'Acadmify. All rights reserved.',
 
-  upi_id: '',
-  upi_name: 'Hari Om Graphics',
   gstin: '08BFQPP6630D1Z7',
 
   social_instagram: 'https://www.instagram.com/acadmify/',
@@ -104,7 +102,7 @@ export const CONTENT_DEFAULTS = {
 
 // Keys an admin may deliberately leave empty: an empty saved value hides the
 // item instead of falling back to the default above.
-const OPTIONAL = /^(announcement_text|hero_eyebrow|about_para3|review\d_|youtube_video\d_|elfsight_widget_id|upi_|gstin|social_)/
+const OPTIONAL = /^(announcement_text|hero_eyebrow|about_para3|review\d_|youtube_video\d_|elfsight_widget_id|gstin|social_)/
 
 const CACHE_KEY = 'acadmify.content.v2'
 

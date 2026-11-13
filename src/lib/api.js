@@ -55,5 +55,12 @@ export const confirmUpload = (orderId, clientToken) =>
 export const freshUploadUrls = (orderId, body) =>
   request('/api/orders/' + encodeURIComponent(orderId) + '/upload-urls', { method: 'POST', body })
 
-export const trackOrder = (orderId, last4) =>
+export const getConfig = () => request('/api/config', { timeoutMs: 15000 })
+
+// body: { orderId, clientToken } or { orderId, phone } (last 4 digits)
+export const createPayment = (body) => request('/api/payments/create-order', { method: 'POST', body })
+
+export const verifyPayment = (details) => request('/api/payments/verify', { method: 'POST', body: details })
+
+export const trackOrder =(orderId, last4) =>
   request('/api/track?order=' + encodeURIComponent(orderId) + '&phone=' + encodeURIComponent(last4))
