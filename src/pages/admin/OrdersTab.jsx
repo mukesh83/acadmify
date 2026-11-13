@@ -129,7 +129,7 @@ export default function OrdersTab() {
   }
 
   async function doDelete(o) {
-    const files = [['thesis-pdfs', o.thesis_pdf_path], ['cover-pages', o.cover_pdf_path]]
+    const files = [['thesis-pdfs', o.thesis_pdf_path], ['cover-pages', o.cover_pdf_path], ['cover-pages', o.guidelines_path]]
     for (const [bucket, path] of files) {
       if (path && !o.files_deleted_at) await supabase.storage.from(bucket).remove([path])
     }
@@ -230,7 +230,7 @@ export default function OrdersTab() {
     const cutoff = new Date(Date.now() - 30 * 86400000).toISOString()
     const { data, error: err } = await supabase
       .from('orders')
-      .select('id, thesis_pdf_path, cover_pdf_path')
+      .select('id, thesis_pdf_path, cover_pdf_path, guidelines_path')
       .eq('status', 'delivered')
       .is('files_deleted_at', null)
       .or('delivered_at.lt.' + cutoff + ',and(delivered_at.is.null,status_updated_at.lt.' + cutoff + ')')
@@ -245,7 +245,7 @@ export default function OrdersTab() {
     if (!window.confirm('Permanently delete the uploaded files for ' + data.length + ' order(s) delivered more than 30 days ago? This cannot be undone.')) return
 
     const thesis = data.map((o) => o.thesis_pdf_path).filter(Boolean)
-    const covers = data.map((o) => o.cover_pdf_path).filter(Boolean)
+    const covers = data.flatMap((o) => [o.cover_pdf_path, o.guidelines_path]).filter(Boolean)
     if (thesis.length) {
       const { error: e1 } = await supabase.storage.from('thesis-pdfs').remove(thesis)
       if (e1) return setNotice({ kind: 'error', text: 'Deleting thesis files failed: ' + e1.message })
@@ -439,7 +439,7 @@ function OrderCard({ o, c, onUpdate, onCancel, onRefund, onDelete }) {
 
         <div className="order-block">
           <h4>Job</h4>
-          <p>{o.total_pages} pages ({o.color_pages} colour) × {o.copies} {o.copies === 1 ? 'copy' : 'copies'}{o.ohp_sheets ? ', ' + o.ohp_sheets + ' OHP/copy' : ''}</p>
+          <p>{o.total_pages} pages × {o.copies} {o.copies === 1 ? 'copy' : 'copies'}{o.ohp_sheets ? ', ' + o.ohp_sheets + ' OHP/copy' : ''}</p>
           <p><span className="swatch-inline" style={{ background: cover.hex }} /> {cover.label} {o.binding_type}{o.lettering ? ', ' + o.lettering + ' lettering' : ''}</p>
           {o.formatting && <p><strong>Thesis formatting requested</strong></p>}
           {o.thesis_title && <p className="pre">Cover text: {o.thesis_title}</p>}
@@ -448,10 +448,13 @@ function OrderCard({ o, c, onUpdate, onCancel, onRefund, onDelete }) {
           {o.instructions && <p className="pre">Notes from customer: {o.instructions}</p>}
           <div className="order-links">
             {o.thesis_pdf_path && !o.files_deleted_at && (
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => openSigned('thesis-pdfs', o.thesis_pdf_path)}>Open thesis PDF</button>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => openSigned('thesis-pdfs', o.thesis_pdf_path)}>Open thesis file</button>
             )}
             {o.cover_pdf_path && !o.files_deleted_at && (
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSigned('cover-pages', o.cover_pdf_path)}>Open cover</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSigned('cover-pages', o.cover_pdf_path)}>Open cover design</button>
+            )}
+            {o.guidelines_path && !o.files_deleted_at && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => openSigned('cover-pages', o.guidelines_path)}>Open guidelines</button>
             )}
             {o.file_link && (
               <a className="btn btn-outline btn-sm" href={o.file_link} target="_blank" rel="noopener noreferrer">Open file link</a>

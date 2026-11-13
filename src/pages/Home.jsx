@@ -25,8 +25,8 @@ export default function Home() {
   usePageMeta({
     title: 'Acadmify — Thesis Printing & Hardbound Binding in Jodhpur',
     description:
-      'Thesis printing and hardbound binding in Jodhpur. B&W ' + rupees(p.bw_per_page) + ' per page, hardbound ' +
-      rupees(p.hard_binding) + ' per copy, 12 cover colours. Upload your PDF, see the exact price, pickup or doorstep delivery.',
+      'Thesis printing and binding in Jodhpur. ' + rupees(p.print_per_page) + ' per page, colour or black & white, hardbound ' +
+      rupees(p.hard_binding) + ' per copy. Upload your thesis, see the exact price, pickup or doorstep delivery.',
     path: '/',
   })
 
@@ -65,21 +65,19 @@ export default function Home() {
     : 'Pickup free'
 
   const priceRows = [
-    ['Black & white printing', rupees(p.bw_per_page) + ' / page', c('paper_spec')],
-    ['Colour printing', rupees(p.color_per_page) + ' / page',
-      rupees(p.colour_bulk_rate) + ' / page when you print more than ' + p.colour_bulk_above + ' colour pages in total (colour pages × copies)'],
-    ['OHP transparent sheet', rupees(p.ohp_per_sheet) + ' / sheet', 'Placed before the title page, certificates, declaration or chapter headings'],
+    ['Printing, colour or black & white', rupees(p.print_per_page) + ' / page', c('paper_spec')],
+    ['OHP transparent sheet', rupees(p.ohp_per_sheet) + ' / sheet', 'Placed before the title page, certificates or chapter headings'],
     ['Hardbound thesis binding', rupees(p.hard_binding) + ' / copy', c('hardbound_desc')],
+    ['Softbound thesis binding', rupees(p.soft_binding) + ' / copy', c('softbound_desc')],
     p.formatting_fee > 0 ? ['Thesis formatting', rupees(p.formatting_fee) + ' / thesis', c('formatting_desc')] : null,
-    p.softbound_enabled ? ['Book binding (softbound)', rupees(p.soft_binding) + ' / copy', c('softbound_desc')] : null,
     ['Delivery', deliveryRate, c('delivery_note')],
   ].filter(Boolean)
 
   const steps = [
-    ['Upload your PDF', 'Share your thesis PDF (or a Google Drive link), then choose copies, colour pages and cover colour.'],
+    ['Choose your options', 'Pick the cover and lettering, then enter your pages, OHP sheets and copies.'],
     ['See your price', 'The exact total, GST included, is shown as you type.'],
     ['Pay online', 'Pay securely by UPI, card, net banking or wallet to confirm your order. We then check your file.'],
-    ['Print & bind', 'Printed on ' + c('paper_spec').split('/')[0].trim() + ' and hardbound with gold or silver lettering. Usually ready in 24–48 hours.'],
+    ['Print & bind', 'Printed on ' + c('paper_spec').split('/')[0].trim() + ' and bound with gold, silver or black lettering. Usually ready in 24–48 hours.'],
     ['Pickup or delivery', 'Collect from our shop for free, or we send a Rapido rider anywhere in Jodhpur (fare paid on delivery).'],
   ]
 
@@ -123,9 +121,8 @@ export default function Home() {
       {/* Services */}
       <section className="services-band" aria-label="Services">
         <ul className="container services-list">
-          <li><strong>Thesis printing &amp; hardbound binding</strong> B&amp;W and colour, 12 cover colours, gold or silver lettering</li>
-          {p.formatting_fee > 0 && <li><strong>Thesis formatting</strong> Your document formatted before printing, {rupees(p.formatting_fee)}</li>}
-          {p.softbound_enabled && <li><strong>Book binding</strong> Softbound binding for general books</li>}
+          <li><strong>Thesis printing &amp; binding</strong> {rupees(p.print_per_page)} per page, colour or black &amp; white, hardbound or softbound</li>
+          {p.formatting_fee > 0 && <li><strong>Thesis formatting</strong> Your Word file formatted before printing, {rupees(p.formatting_fee)}</li>}
           <li><strong>Pickup or delivery</strong> Free pickup, or Rapido delivery anywhere in Jodhpur</li>
         </ul>
       </section>
@@ -199,12 +196,16 @@ export default function Home() {
                   <tr>
                     <th scope="row">GST</th>
                     <td className="num price">{p.gst_rate}%</td>
-                    <td>Added to the total and shown on your quote</td>
+                    <td>Added to the total</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+          <p className="hint center">
+            These prices apply to theses of {p.min_pages} or more pages and {p.min_copies} or more copies. For anything smaller,{' '}
+            <a href={wa('Hello Acadmify! I would like a price for my thesis.')} target="_blank" rel="noopener noreferrer">message us on WhatsApp</a> and we will quote you.
+          </p>
         </div>
       </section>
 

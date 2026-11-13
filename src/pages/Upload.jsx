@@ -1,4 +1,4 @@
-// Place an order in three steps: details + file -> print options -> review.
+// Place an order in three steps: print options -> your details and files -> review.
 // Honest by design: if the order is not saved, we say so plainly and never
 // show a made-up order number.
 import { useEffect, useRef, useState } from 'react'
@@ -14,7 +14,10 @@ import { countPdfPages } from '../lib/pdfPages.js'
 import { readJson, writeJson, removeKey } from '../lib/util.js'
 import { rupees, plural, formatBytes } from '../lib/format.js'
 import { trackEvent } from '../lib/analytics.js'
-import { COVERS, coverById, LETTERING, letteringLabel, DEGREES, DELIVERY_METHODS, MAX_PDF_MB, MAX_COVER_MB } from '../constants.js'
+import {
+  COVERS, coverById, LETTERING, letteringLabel, BINDINGS, bindingLabel, DEGREES, DELIVERY_METHODS,
+  MAX_PDF_MB, MAX_COVER_MB, MAX_GUIDELINES_MB,
+} from '../constants.js'
 import Field from '../components/Field.jsx'
 import QuoteBreakdown from '../components/QuoteBreakdown.jsx'
 import { Book, CoverPicker, LetteringPicker } from '../components/HeroBook.jsx'
@@ -24,12 +27,12 @@ import { IconUpload, IconFile, IconCheck, IconCopy, IconWhatsApp } from '../comp
 
 const MB = 1048576
 const DRAFT_KEY = 'acadmify.draft'
-const STEPS = ['Your details', 'Print options', 'Review & submit']
+const STEPS = ['Print options', 'Your details', 'Review & submit']
 
 const EMPTY = {
+  cover: 'maroon', lettering: 'gold', ohp: '0', totalPages: '', copies: '5', binding: 'hardbound', formatting: false,
+  thesisTitle: '',
   name: '', phone: '', email: '', university: '', degree: 'PhD', fileLink: '',
-  totalPages: '', colourPages: '0', copies: '1', ohp: '0', cover: 'maroon', thesisTitle: '',
-  lettering: 'gold', formatting: false,
   deliveryMethod: 'pickup', address: '', requiredBy: '', instructions: '',
   consent: false, website: '',
 }
@@ -48,15 +51,23 @@ const isHttps = (v) => {
     return false
   }
 }
-const isPdf = (file) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
-function coverMime(file) {
-  const n = file.name.toLowerCase()
-  if (file.type === 'application/pdf' || n.endsWith('.pdf')) return 'application/pdf'
-  if (file.type === 'image/png' || n.endsWith('.png')) return 'image/png'
-  if (/image\/jpe?g/.test(file.type) || /\.jpe?g$/.test(n)) return 'image/jpeg'
-  return ''
+
+const MIME = {
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  jpg: 'image/jpeg',
+  png: 'image/png',
 }
-const EXT = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg' }
+// "pdf", "docx", "jpg"... from the file name ("jpeg" counts as "jpg")
+function fileExt(file) {
+  const e = ((file.name || '').toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || ''
+  return e === 'jpeg' ? 'jpg' : e
+}
+const mimeOf = (file) => MIME[fileExt(file)] || ''
+const COVER_EXTS = ['pdf', 'jpg', 'png']
+const GUIDELINE_EXTS = ['pdf', 'doc', 'docx', 'jpg', 'png']
+const thesisExts = (formatting) => (formatting ? ['doc', 'docx'] : ['pdf'])
 
 function initialForm() {
   const draft = readJson('sessionStorage', DRAFT_KEY) || {}
@@ -64,23 +75,22 @@ function initialForm() {
   const next = { ...EMPTY, ...draft, consent: false, website: '' }
   if (pre.totalPages) {
     next.totalPages = String(pre.totalPages)
-    next.colourPages = String(pre.colourPages || 0)
-    next.copies = String(pre.copies || 1)
+    next.copies = String(pre.copies || next.copies)
     next.ohp = String(pre.ohp || 0)
   }
-  if (pre.deliveryMethod) next.deliveryMethod = pre.deliveryMethod
   const cover = pre.cover || readJson('sessionStorage', 'acadmify.cover')
   if (cover && COVERS.some((x) => x.id === cover)) next.cover = cover
-  if (pre.formatting) next.formatting = true
+  if (!COVERS.some((x) => x.id === next.cover)) next.cover = 'maroon'
   const lettering = pre.lettering || readJson('sessionStorage', 'acadmify.lettering')
   if (LETTERING.some((x) => x.id === lettering)) next.lettering = lettering
+  if (!LETTERING.some((x) => x.id === next.lettering)) next.lettering = 'gold'
   return next
 }
 
 export default function Upload() {
   usePageMeta({
-    title: 'Upload your thesis — Acadmify',
-    description: 'Upload your thesis PDF, choose copies, colour pages and cover colour, and see the exact price. Pickup or doorstep delivery in Jodhpur.',
+    title: 'Place your thesis order — Acadmify',
+    description: 'Choose your thesis cover, lettering, pages and copies, see the exact price and order online. Pickup or doorstep delivery in Jodhpur.',
     path: '/upload',
   })
 
@@ -93,6 +103,7 @@ export default function Upload() {
   const [fileMode, setFileMode] = useState('upload')
   const [thesisFile, setThesisFile] = useState(null)
   const [coverFile, setCoverFile] = useState(null)
+  const [guidelinesFile, setGuidelinesFile] = useState(null)
   const [pageCount, setPageCount] = useState(null)
   const [counting, setCounting] = useState(false)
   const [errors, setErrors] = useState({})
@@ -123,8 +134,10 @@ export default function Upload() {
     writeJson('sessionStorage', DRAFT_KEY, draft)
   }, [f, phase])
 
-  const q = calcQuote({ ...f, binding: 'hardbound' }, p)
+  const q = calcQuote(f, p)
   const method = DELIVERY_METHODS.find((m) => m.id === f.deliveryMethod) || DELIVERY_METHODS[0]
+  const wordFile = f.formatting
+  const thesisWhat = wordFile ? 'Word file' : 'PDF'
 
   function set(key, value) {
     setF((s) => ({ ...s, [key]: value }))
@@ -143,13 +156,19 @@ export default function Upload() {
   }
 
   // ─── Files ────────────────────────────────────────────────────────────────
+  function thesisProblem(file, formatting) {
+    if (!thesisExts(formatting).includes(fileExt(file))) {
+      return formatting ? 'Please choose your Word file (.doc or .docx).' : 'Please choose a PDF file.'
+    }
+    if (file.size > MAX_PDF_MB * MB) {
+      return 'This file is ' + formatBytes(file.size) + '. The limit is ' + MAX_PDF_MB + ' MB, so please share a Google Drive link instead.'
+    }
+    return null
+  }
+
   async function pickThesis(file) {
     if (!file) return
-    const problem = !isPdf(file)
-      ? 'Please choose a PDF file.'
-      : file.size > MAX_PDF_MB * MB
-        ? 'This PDF is ' + formatBytes(file.size) + '. The limit is ' + MAX_PDF_MB + ' MB, so please share a Google Drive link instead.'
-        : null
+    const problem = thesisProblem(file, f.formatting)
     if (problem) {
       setThesisFile(null)
       setErrors((e) => ({ ...e, thesisFile: problem }))
@@ -158,6 +177,7 @@ export default function Upload() {
     setErrors((e) => ({ ...e, thesisFile: undefined }))
     setThesisFile(file)
     setPageCount(null)
+    if (fileExt(file) !== 'pdf') return
     setCounting(true)
     const token = ++countToken.current
     await new Promise((r) => setTimeout(r, 30)) // let "Counting pages…" appear first
@@ -165,14 +185,12 @@ export default function Upload() {
     if (token !== countToken.current) return
     setCounting(false)
     setPageCount(n)
-    if (n) setF((s) => ({ ...s, totalPages: String(n), colourPages: Number(s.colourPages) > n ? '0' : s.colourPages }))
   }
 
   function pickCover(file) {
     if (!file) return
-    const mime = coverMime(file)
-    const problem = !mime ? 'The cover page must be a PDF, JPG or PNG.'
-      : file.size > MAX_COVER_MB * MB ? 'The cover page must be under ' + MAX_COVER_MB + ' MB.' : null
+    const problem = !COVER_EXTS.includes(fileExt(file)) ? 'The cover design must be a PDF, JPG or PNG.'
+      : file.size > MAX_COVER_MB * MB ? 'The cover design must be under ' + MAX_COVER_MB + ' MB.' : null
     if (problem) {
       setCoverFile(null)
       setErrors((e) => ({ ...e, coverFile: problem }))
@@ -182,26 +200,47 @@ export default function Upload() {
     setCoverFile(file)
   }
 
+  function pickGuidelines(file) {
+    if (!file) return
+    const problem = !GUIDELINE_EXTS.includes(fileExt(file)) ? 'The guidelines must be a PDF, Word document, JPG or PNG.'
+      : file.size > MAX_GUIDELINES_MB * MB ? 'The guidelines file must be under ' + MAX_GUIDELINES_MB + ' MB.' : null
+    if (problem) {
+      setGuidelinesFile(null)
+      setErrors((e) => ({ ...e, guidelinesFile: problem }))
+      return
+    }
+    setErrors((e) => ({ ...e, guidelinesFile: undefined }))
+    setGuidelinesFile(file)
+  }
+
   // ─── Validation (mirrors the backend) ─────────────────────────────────────
   function validate(s) {
     const e = {}
     if (s === 1) {
+      const tp = Number(f.totalPages)
+      const copies = Number(f.copies)
+      const ohp = Number(f.ohp || 0)
+      if (!Number.isInteger(tp) || tp < 1 || tp > 5000) e.totalPages = 'Please enter the number of pages in your thesis (1 to 5000).'
+      if (!Number.isInteger(copies) || copies < 1 || copies > 100) e.copies = 'Copies must be between 1 and 100.'
+      if (!Number.isInteger(ohp) || ohp < 0 || ohp > 100) e.ohp = 'OHP sheets must be between 0 and 100.'
+      if (!e.totalPages && !e.copies && !q.eligible) {
+        e.totalPages = 'For this size of order, please message us on WhatsApp for a price (see below).'
+      }
+    }
+    if (s === 2) {
       if (f.name.trim().length < 2) e.name = 'Please enter your full name.'
       if (!normalisePhone(f.phone)) e.phone = 'Please enter a 10-digit mobile number.'
       if (f.email.trim() && !isEmail(f.email.trim())) e.email = 'Please check your email address.'
-      if (fileMode === 'upload' && !thesisFile) e.thesisFile = errors.thesisFile || 'Please choose your thesis PDF.'
+      if (fileMode === 'upload') {
+        if (!thesisFile) e.thesisFile = errors.thesisFile || 'Please choose your thesis ' + thesisWhat + '.'
+        else {
+          const problem = thesisProblem(thesisFile, f.formatting)
+          if (problem) e.thesisFile = problem
+        }
+      }
       if (fileMode === 'link' && !isHttps(f.fileLink.trim())) e.fileLink = 'Please paste a link that starts with https://'
       if (errors.coverFile) e.coverFile = errors.coverFile
-    }
-    if (s === 2) {
-      const tp = Number(f.totalPages)
-      const cp = Number(f.colourPages || 0)
-      const copies = Number(f.copies)
-      const ohp = Number(f.ohp || 0)
-      if (!Number.isInteger(tp) || tp < 1 || tp > 5000) e.totalPages = 'Please enter the total number of pages (1 to 5000).'
-      if (!Number.isInteger(cp) || cp < 0 || cp > tp) e.colourPages = 'Colour pages must be between 0 and your total pages.'
-      if (!Number.isInteger(copies) || copies < 1 || copies > 100) e.copies = 'Copies must be between 1 and 100.'
-      if (!Number.isInteger(ohp) || ohp < 0 || ohp > 100) e.ohp = 'OHP sheets must be between 0 and 100.'
+      if (errors.guidelinesFile) e.guidelinesFile = errors.guidelinesFile
       if (f.deliveryMethod !== 'pickup' && f.address.trim().length < 10) e.address = 'Please enter your full address, with area and a landmark.'
     }
     if (s === 3 && !f.consent) e.consent = 'Please tick this box to place your order.'
@@ -237,10 +276,9 @@ export default function Upload() {
       degree: f.degree,
       thesisTitle: f.thesisTitle.trim(),
       totalPages: Number(f.totalPages),
-      colourPages: Number(f.colourPages || 0),
       copies: Number(f.copies),
       ohp: Number(f.ohp || 0),
-      binding: 'hardbound',
+      binding: f.binding,
       coverColour: f.cover,
       lettering: f.lettering,
       formatting: f.formatting === true,
@@ -252,26 +290,25 @@ export default function Upload() {
       website: f.website,
     }
     if (fileMode === 'link') body.fileLink = f.fileLink.trim()
-    else body.thesisFile = { name: thesisFile.name, size: thesisFile.size, type: 'application/pdf' }
-    if (coverFile) body.coverFile = { name: coverFile.name, size: coverFile.size, type: coverMime(coverFile) }
+    else body.thesisFile = { name: thesisFile.name, size: thesisFile.size, type: mimeOf(thesisFile) }
+    if (coverFile) body.coverFile = { name: coverFile.name, size: coverFile.size, type: mimeOf(coverFile) }
+    if (guidelinesFile) body.guidelinesFile = { name: guidelinesFile.name, size: guidelinesFile.size, type: mimeOf(guidelinesFile) }
     return body
+  }
+
+  async function sendFile(what, url, file) {
+    setUploadingWhat(what)
+    setProgress(0)
+    setPhase('uploading')
+    await putFile(url, file, { contentType: mimeOf(file), onProgress: setProgress })
   }
 
   async function runUploads(created, uploads) {
     try {
-      if (uploads.thesis && thesisFile && fileMode === 'upload') {
-        setUploadingWhat('thesis')
-        setProgress(0)
-        setPhase('uploading')
-        await putFile(uploads.thesis.signedUrl, thesisFile, { contentType: 'application/pdf', onProgress: setProgress })
-      }
-      if (uploads.cover && coverFile) {
-        setUploadingWhat('cover')
-        setProgress(0)
-        setPhase('uploading')
-        await putFile(uploads.cover.signedUrl, coverFile, { contentType: coverMime(coverFile), onProgress: setProgress })
-      }
-      if (uploads.thesis || uploads.cover) {
+      if (uploads.thesis && thesisFile && fileMode === 'upload') await sendFile('thesis', uploads.thesis.signedUrl, thesisFile)
+      if (uploads.cover && coverFile) await sendFile('cover', uploads.cover.signedUrl, coverFile)
+      if (uploads.guidelines && guidelinesFile) await sendFile('guidelines', uploads.guidelines.signedUrl, guidelinesFile)
+      if (uploads.thesis || uploads.cover || uploads.guidelines) {
         setPhase('confirming')
         await confirmUpload(created.orderId, created.clientToken)
       }
@@ -314,7 +351,9 @@ export default function Upload() {
       const { uploads } = await freshUploadUrls(order.orderId, {
         clientToken: order.clientToken,
         thesis: fileMode === 'upload' && Boolean(thesisFile),
-        coverExt: coverFile ? EXT[coverMime(coverFile)] : null,
+        thesisExt: thesisFile ? fileExt(thesisFile) : null,
+        coverExt: coverFile ? fileExt(coverFile) : null,
+        guidelinesExt: guidelinesFile ? fileExt(guidelinesFile) : null,
       })
       await runUploads(order, uploads || {})
     } catch (err) {
@@ -325,9 +364,10 @@ export default function Upload() {
 
   function startOver() {
     removeKey('sessionStorage', DRAFT_KEY)
-    setF({ ...EMPTY, cover: f.cover })
+    setF({ ...EMPTY, cover: f.cover, lettering: f.lettering })
     setThesisFile(null)
     setCoverFile(null)
+    setGuidelinesFile(null)
     setPageCount(null)
     setOrder(null)
     setPaidNow(false)
@@ -349,19 +389,20 @@ export default function Upload() {
 
   // ─── WhatsApp messages ────────────────────────────────────────────────────
   const orderSummary =
-    q.totalPages + ' pages (' + q.colourPages + ' colour) × ' + plural(q.copies, 'copy', 'copies') +
-    (q.ohp ? ', ' + q.ohp + ' OHP sheets' : '') + ', ' + coverById(f.cover).label.toLowerCase() + ' cover with ' +
-    letteringLabel(f.lettering).toLowerCase() + ' lettering, ' + (q.formatting ? 'with thesis formatting, ' : '') +
-    method.label.toLowerCase()
+    q.totalPages + ' pages × ' + plural(q.copies, 'copy', 'copies') +
+    (q.ohp ? ', ' + q.ohp + ' OHP sheets' : '') + ', ' + bindingLabel(f.binding).toLowerCase() + ', ' +
+    coverById(f.cover).label.toLowerCase() + ' cover with ' + letteringLabel(f.lettering).toLowerCase() + ' lettering' +
+    (q.formatting ? ', with thesis formatting' : '')
 
+  const waQuote = wa('Hello Acadmify! I would like a price for my thesis: ' + orderSummary + '.')
   const waCreateFailed = wa(
     'Hello Acadmify! I tried to order on the website but it did not go through.\n' +
-    'Name: ' + f.name + '\nPhone: ' + f.phone + '\n' + orderSummary +
+    'Name: ' + f.name + '\nPhone: ' + f.phone + '\n' + orderSummary + ', ' + method.label.toLowerCase() +
     (f.deliveryMethod !== 'pickup' && f.address ? '\nAddress: ' + f.address : '') +
-    '\nI will send my PDF here.'
+    '\nI will send my file here.'
   )
   const waUploadFailed = order && wa(
-    'Hello Acadmify! My order ' + order.orderId + ' was created, but the file upload did not finish. I will send my PDF here.'
+    'Hello Acadmify! My order ' + order.orderId + ' was created, but the file upload did not finish. I will send my file here.'
   )
   const waDone = order && wa(
     'Hello Acadmify! I have placed order ' + order.orderId + ': ' + orderSummary + '. Total ' + rupees(order.quote.total) + '. ' +
@@ -370,7 +411,8 @@ export default function Upload() {
 
   // ─── Screens ──────────────────────────────────────────────────────────────
   const busy = phase === 'creating' || phase === 'uploading' || phase === 'confirming'
-  const hasUploads = (fileMode === 'upload' && thesisFile) || coverFile
+  const hasUploads = (fileMode === 'upload' && thesisFile) || coverFile || guidelinesFile
+  const uploadLabel = { thesis: 'thesis', cover: 'cover design', guidelines: 'guidelines' }[uploadingWhat]
 
   if (phase === 'done' && order) {
     return (
@@ -408,7 +450,7 @@ export default function Upload() {
                 ? 'Payment received, so your order is confirmed.'
                 : 'Pay online to confirm your order. If you leave now, you can pay later from the Track page.'}
             </li>
-            <li>We check your file. If anything differs from your order (for example the page count), we tell you on WhatsApp and settle the difference.</li>
+            <li>We check your file. If anything needs to be clarified, we will chat with you on WhatsApp or email.</li>
             <li>We print and bind your thesis. Usually ready in 24–48 hours.</li>
             <li>
               {f.deliveryMethod === 'pickup'
@@ -437,11 +479,11 @@ export default function Upload() {
             <li className={phase === 'creating' ? 'is-active' : 'is-done'}>Saving your order</li>
             {hasUploads && (
               <li className={phase === 'uploading' ? 'is-active' : phase === 'confirming' ? 'is-done' : ''}>
-                Uploading your {uploadingWhat === 'cover' ? 'cover page' : 'thesis'}
+                Uploading your {uploadLabel}
                 {phase === 'uploading' ? ' — ' + pct + '%' : ''}
               </li>
             )}
-            {hasUploads && <li className={phase === 'confirming' ? 'is-active' : ''}>Checking the file arrived</li>}
+            {hasUploads && <li className={phase === 'confirming' ? 'is-active' : ''}>Checking the files arrived</li>}
           </ol>
           {phase === 'uploading' && (
             <div className="progress-bar" aria-hidden="true"><span style={{ width: pct + '%' }} /></div>
@@ -482,11 +524,11 @@ export default function Upload() {
           <p>
             Your order <strong className="num">{order.orderId}</strong> was saved, but the upload stopped: {failMsg}
           </p>
-          <p>Keep this page open and try again, or send the PDF to us on WhatsApp with your order number.</p>
+          <p>Keep this page open and try again, or send the file to us on WhatsApp with your order number.</p>
           <div className="btn-row">
             <button type="button" className="btn btn-primary" onClick={retryUpload}>Retry upload</button>
             <a className="btn btn-wa" href={waUploadFailed} target="_blank" rel="noopener noreferrer">
-              <IconWhatsApp size={18} /> Send PDF on WhatsApp
+              <IconWhatsApp size={18} /> Send file on WhatsApp
             </a>
           </div>
         </div>
@@ -494,12 +536,35 @@ export default function Upload() {
     )
   }
 
+  // The price column: a total when the order can be priced online, a WhatsApp prompt when it cannot
+  const priceAside = (
+    <aside className="form-aside" aria-label="Your price">
+      <h2 className="aside-title">Your price</h2>
+      {!q.valid ? (
+        <div className="quote-empty"><p>Enter the pages in your thesis to see the price.</p></div>
+      ) : !q.eligible ? (
+        <div className="quote-empty">
+          <p>
+            Online prices are for theses of {p.min_pages} or more pages and {p.min_copies} or more copies.
+            For this order, message us and we will quote you.
+          </p>
+          <a className="btn btn-wa btn-block" href={waQuote} target="_blank" rel="noopener noreferrer"
+            onClick={() => trackEvent('whatsapp_click', { place: 'order_quote' })}>
+            <IconWhatsApp size={18} /> Get a price on WhatsApp
+          </a>
+        </div>
+      ) : (
+        <QuoteBreakdown q={q} />
+      )}
+    </aside>
+  )
+
   // ─── The form ─────────────────────────────────────────────────────────────
   return (
     <div className="page" ref={topRef}>
       <div className="container">
         <header className="page-head">
-          <h1>Upload your thesis</h1>
+          <h1>Place your thesis order</h1>
           <p>Three short steps, then pay securely online to confirm your order.</p>
         </header>
 
@@ -513,162 +578,187 @@ export default function Upload() {
         </ol>
 
         {step === 1 && (
-          <div className="form-card">
-            <h2>Your details</h2>
-            <div className="field-row cols-2">
-              <Field id="u-name" label="Full name" error={errors.name}>
-                <input {...bind('name')} autoComplete="name" maxLength={80} />
-              </Field>
-              <Field id="u-phone" label="Mobile number" hint="We confirm your order on this WhatsApp number." error={errors.phone}>
-                <input {...bind('phone')} type="tel" inputMode="tel" autoComplete="tel" placeholder="98765 43210" maxLength={16} />
-              </Field>
-            </div>
-            <div className="field-row cols-3">
-              <Field id="u-email" label="Email" optional error={errors.email}>
-                <input {...bind('email')} type="email" autoComplete="email" maxLength={120} />
-              </Field>
-              <Field id="u-university" label="University / college" optional>
-                <input {...bind('university')} maxLength={120} placeholder="e.g. JNVU Jodhpur" />
-              </Field>
-              <Field id="u-degree" label="Degree">
-                <select {...bind('degree')}>
-                  {DEGREES.map((d) => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </Field>
-            </div>
-
-            <h2>Your thesis file</h2>
-            <div className="segmented" role="radiogroup" aria-label="How will you send the file?">
-              <label className={fileMode === 'upload' ? 'is-on' : ''}>
-                <input type="radio" name="file-mode" checked={fileMode === 'upload'} onChange={() => setFileMode('upload')} />
-                Upload PDF (up to {MAX_PDF_MB} MB)
-              </label>
-              <label className={fileMode === 'link' ? 'is-on' : ''}>
-                <input type="radio" name="file-mode" checked={fileMode === 'link'} onChange={() => setFileMode('link')} />
-                File too large? Share a link
-              </label>
-            </div>
-
-            {fileMode === 'upload' ? (
-              <div className={'field' + (errors.thesisFile ? ' has-error' : '')}>
-                <label
-                  htmlFor="u-thesisFile"
-                  className={'dropzone' + (dragOver ? ' is-over' : '') + (thesisFile ? ' has-file' : '')}
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={(e) => { e.preventDefault(); setDragOver(false); pickThesis(e.dataTransfer.files[0]) }}
-                >
-                  {thesisFile ? <IconFile size={28} /> : <IconUpload size={28} />}
-                  {thesisFile ? (
-                    <span>
-                      <strong className="file-name">{thesisFile.name}</strong>
-                      <span className="hint">
-                        {formatBytes(thesisFile.size)}
-                        {counting ? ' · Counting pages…' : pageCount ? ' · ' + pageCount + ' pages' : ''}
-                        {' · Tap to change'}
-                      </span>
-                    </span>
-                  ) : (
-                    <span>
-                      <strong>Choose your thesis PDF</strong>
-                      <span className="hint">or drag it here · PDF only, up to {MAX_PDF_MB} MB</span>
-                    </span>
-                  )}
-                  <input
-                    id="u-thesisFile"
-                    className="sr-only"
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    aria-describedby="u-thesisFile-hint"
-                    onChange={(e) => pickThesis(e.target.files[0])}
-                  />
-                </label>
-                {errors.thesisFile && <p className="field-error" id="u-thesisFile-hint" role="alert">{errors.thesisFile}</p>}
-                {!errors.thesisFile && pageCount && (
-                  <p className="hint" id="u-thesisFile-hint">We counted {pageCount} pages. You can change this on the next step.</p>
-                )}
+          <div className="form-split">
+            <div className="form-card">
+              <h2>Thesis cover</h2>
+              <div className="cover-row">
+                <Book cover={f.cover} lettering={f.lettering} size="sm" />
+                <div className="cover-options">
+                  <CoverPicker value={f.cover} onChange={(id) => set('cover', id)} name="order-cover" legend="Cover" />
+                  <LetteringPicker value={f.lettering} onChange={(id) => set('lettering', id)} name="order-lettering" />
+                </div>
               </div>
-            ) : (
-              <Field id="u-fileLink" label="Link to your PDF" hint="Google Drive, OneDrive or Dropbox. Set sharing to “Anyone with the link”. A Word file is fine if you are ordering formatting." error={errors.fileLink}>
-                <input {...bind('fileLink')} type="url" inputMode="url" placeholder="https://drive.google.com/…" maxLength={500} />
+              {f.cover === 'laminated' && (
+                <p className="hint">For a laminated colour-printed cover, you can upload your cover design in the next step.</p>
+              )}
+              <Field id="u-thesisTitle" label="Text for the cover and spine" optional
+                hint="For example the thesis title, your name, university and year.">
+                <textarea {...bind('thesisTitle')} rows={3} maxLength={200} />
               </Field>
-            )}
 
-            <div className={'field' + (errors.coverFile ? ' has-error' : '')}>
-              <label htmlFor="u-coverFile">Sample cover page <span className="optional">(optional)</span></label>
-              <input id="u-coverFile" type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
-                onChange={(e) => pickCover(e.target.files[0])} aria-describedby="u-coverFile-hint" />
-              {errors.coverFile
-                ? <p className="field-error" id="u-coverFile-hint" role="alert">{errors.coverFile}</p>
-                : <p className="hint" id="u-coverFile-hint">PDF, JPG or PNG up to {MAX_COVER_MB} MB, if your university has a set cover format.</p>}
+              <h2>Your thesis</h2>
+              <div className="field-row cols-3 tight">
+                <Field id="u-totalPages" label="Pages in thesis" error={errors.totalPages}>
+                  <input {...bind('totalPages')} type="number" inputMode="numeric" min="1" max="5000" />
+                </Field>
+                <Field id="u-copies" label="Copies" error={errors.copies}>
+                  <input {...bind('copies')} type="number" inputMode="numeric" min="1" max="100" />
+                </Field>
+                <Field id="u-ohp" label="OHP transparent sheets" error={errors.ohp} hint={rupees(p.ohp_per_sheet) + ' each, per copy'}>
+                  <input {...bind('ohp')} type="number" inputMode="numeric" min="0" max="100" />
+                </Field>
+              </div>
+              <p className="hint">Printing is {rupees(p.print_per_page)} per page, colour or black &amp; white, on {c('paper_spec')}.</p>
+
+              <h2>Binding</h2>
+              <div className="segmented" role="radiogroup" aria-label="Binding">
+                {BINDINGS.map((b) => (
+                  <label key={b.id} className={f.binding === b.id ? 'is-on' : ''}>
+                    <input type="radio" name="u-binding" value={b.id} checked={f.binding === b.id} onChange={() => set('binding', b.id)} />
+                    {b.label} · {rupees(b.id === 'hardbound' ? p.hard_binding : p.soft_binding)} per copy
+                  </label>
+                ))}
+              </div>
+
+              {p.formatting_fee > 0 && (
+                <div className="field">
+                  <label className="check">
+                    <input id="u-formatting" type="checkbox" checked={f.formatting} onChange={(e) => set('formatting', e.target.checked)} />
+                    <span>
+                      Format my thesis before printing ({rupees(p.formatting_fee)} per thesis)
+                      <span className="hint">Word file required. You will upload it in the next step.</span>
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {q.valid && !q.eligible && (
+                <p className="note-warn">
+                  Online prices are for theses of {p.min_pages} or more pages and {p.min_copies} or more copies. For this order, please{' '}
+                  <a href={waQuote} target="_blank" rel="noopener noreferrer">message us on WhatsApp</a> and we will quote you.
+                </p>
+              )}
+
+              <div className="form-actions">
+                <button type="button" className="btn btn-primary btn-lg" onClick={next}>Continue</button>
+              </div>
             </div>
-
-            <ConfidentialityNote />
-
-            <div className="form-actions">
-              <button type="button" className="btn btn-primary btn-lg" onClick={next}>Continue to print options</button>
-            </div>
+            {priceAside}
           </div>
         )}
 
         {step === 2 && (
           <div className="form-split">
             <div className="form-card">
-              <h2>Pages and copies</h2>
-              <div className="field-row cols-3 tight">
-                <Field id="u-totalPages" label="Total pages" error={errors.totalPages}
-                  hint={pageCount ? 'Your PDF has ' + pageCount + ' pages.' : null}>
-                  <input {...bind('totalPages')} type="number" inputMode="numeric" min="1" max="5000" />
-                </Field>
-                <Field id="u-colourPages" label="Colour pages" error={errors.colourPages}
-                  hint="Pages with any colour on them.">
-                  <input {...bind('colourPages')} type="number" inputMode="numeric" min="0" max="5000" />
-                </Field>
-                <div className="field">
-                  <span className="label">B&amp;W pages</span>
-                  <output className="output num">{q.bwPages}</output>
-                </div>
-              </div>
+              <h2>Your details</h2>
               <div className="field-row cols-2">
-                <Field id="u-copies" label="Copies" error={errors.copies}>
-                  <input {...bind('copies')} type="number" inputMode="numeric" min="1" max="100" />
+                <Field id="u-name" label="Full name" error={errors.name}>
+                  <input {...bind('name')} autoComplete="name" maxLength={80} />
                 </Field>
-                <Field id="u-ohp" label="OHP sheets per copy" optional error={errors.ohp}
-                  hint={rupees(p.ohp_per_sheet) + ' each. Clear sheets placed before the title page, certificates or chapters.'}>
-                  <input {...bind('ohp')} type="number" inputMode="numeric" min="0" max="100" />
+                <Field id="u-phone" label="Mobile number" hint="We chat with you on this WhatsApp number if we have a question." error={errors.phone}>
+                  <input {...bind('phone')} type="tel" inputMode="tel" autoComplete="tel" placeholder="98765 43210" maxLength={16} />
+                </Field>
+              </div>
+              <div className="field-row cols-3">
+                <Field id="u-email" label="Email" optional error={errors.email}>
+                  <input {...bind('email')} type="email" autoComplete="email" maxLength={120} />
+                </Field>
+                <Field id="u-university" label="University / college" optional>
+                  <input {...bind('university')} maxLength={120} placeholder="e.g. JNVU Jodhpur" />
+                </Field>
+                <Field id="u-degree" label="Degree">
+                  <select {...bind('degree')}>
+                    {DEGREES.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
                 </Field>
               </div>
 
-              <h2>Hardbound cover</h2>
-              <div className="cover-row">
-                <Book cover={f.cover} lettering={f.lettering} size="sm" />
-                <div className="cover-options">
-                  <CoverPicker value={f.cover} onChange={(id) => set('cover', id)} name="order-cover" />
-                  <LetteringPicker value={f.lettering} onChange={(id) => set('lettering', id)} name="order-lettering" />
-                </div>
+              <h2>{wordFile ? 'Your Word file' : 'Your thesis file'}</h2>
+              <div className="segmented" role="radiogroup" aria-label="How will you send the file?">
+                <label className={fileMode === 'upload' ? 'is-on' : ''}>
+                  <input type="radio" name="file-mode" checked={fileMode === 'upload'} onChange={() => setFileMode('upload')} />
+                  Upload {thesisWhat} (up to {MAX_PDF_MB} MB)
+                </label>
+                <label className={fileMode === 'link' ? 'is-on' : ''}>
+                  <input type="radio" name="file-mode" checked={fileMode === 'link'} onChange={() => setFileMode('link')} />
+                  File too large? Share a link
+                </label>
               </div>
-              <p className="hint">{c('hardbound_desc')}, {rupees(p.hard_binding)} per copy.</p>
-              <Field id="u-thesisTitle" label="Text for the cover and spine" optional
-                hint="For example the thesis title, your name, university and year. Or upload a sample cover page in step 1.">
-                <textarea {...bind('thesisTitle')} rows={3} maxLength={200} />
-              </Field>
 
-              {p.formatting_fee > 0 && (
-                <>
-                  <h2>Thesis formatting</h2>
-                  <div className="field">
-                    <label className="check">
-                      <input id="u-formatting" type="checkbox" checked={f.formatting} onChange={(e) => set('formatting', e.target.checked)} />
+              {fileMode === 'upload' ? (
+                <div className={'field' + (errors.thesisFile ? ' has-error' : '')}>
+                  <label
+                    htmlFor="u-thesisFile"
+                    className={'dropzone' + (dragOver ? ' is-over' : '') + (thesisFile ? ' has-file' : '')}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => { e.preventDefault(); setDragOver(false); pickThesis(e.dataTransfer.files[0]) }}
+                  >
+                    {thesisFile ? <IconFile size={28} /> : <IconUpload size={28} />}
+                    {thesisFile ? (
                       <span>
-                        Format my thesis before printing ({rupees(p.formatting_fee)} per thesis)
+                        <strong className="file-name">{thesisFile.name}</strong>
                         <span className="hint">
-                          We’ll discuss what you need on WhatsApp. If the page count changes after formatting, we settle the difference with you on WhatsApp.
+                          {formatBytes(thesisFile.size)}
+                          {counting ? ' · Counting pages…' : pageCount ? ' · ' + pageCount + ' pages' : ''}
+                          {' · Tap to change'}
                         </span>
                       </span>
-                    </label>
-                  </div>
-                </>
+                    ) : (
+                      <span>
+                        <strong>Choose your thesis {thesisWhat}</strong>
+                        <span className="hint">or drag it here · {wordFile ? '.doc or .docx' : 'PDF only'}, up to {MAX_PDF_MB} MB</span>
+                      </span>
+                    )}
+                    <input
+                      id="u-thesisFile"
+                      className="sr-only"
+                      type="file"
+                      accept={wordFile ? '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/pdf,.pdf'}
+                      aria-describedby="u-thesisFile-hint"
+                      onChange={(e) => pickThesis(e.target.files[0])}
+                    />
+                  </label>
+                  {errors.thesisFile && <p className="field-error" id="u-thesisFile-hint" role="alert">{errors.thesisFile}</p>}
+                  {!errors.thesisFile && pageCount && Number(f.totalPages) !== pageCount && (
+                    <p className="hint" id="u-thesisFile-hint">
+                      This PDF has {pageCount} pages, but you entered {f.totalPages}. If that is a mistake, go back and correct it. Otherwise we will chat with you.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <Field id="u-fileLink" label={wordFile ? 'Link to your Word file' : 'Link to your PDF'}
+                  hint="Google Drive, OneDrive or Dropbox. Set sharing to “Anyone with the link”." error={errors.fileLink}>
+                  <input {...bind('fileLink')} type="url" inputMode="url" placeholder="https://drive.google.com/…" maxLength={500} />
+                </Field>
               )}
+
+              {f.cover === 'laminated' && (
+                <div className={'field' + (errors.coverFile ? ' has-error' : '')}>
+                  <label htmlFor="u-coverFile">Your cover design <span className="optional">(for the laminated cover)</span></label>
+                  <input id="u-coverFile" type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => pickCover(e.target.files[0])} aria-describedby="u-coverFile-hint" />
+                  {errors.coverFile
+                    ? <p className="field-error" id="u-coverFile-hint" role="alert">{errors.coverFile}</p>
+                    : <p className="hint" id="u-coverFile-hint">PDF, JPG or PNG up to {MAX_COVER_MB} MB. You can also send it on WhatsApp later.</p>}
+                </div>
+              )}
+
+              <div className={'field' + (errors.guidelinesFile ? ' has-error' : '')}>
+                <label htmlFor="u-guidelinesFile">University thesis guidelines <span className="optional">(optional)</span></label>
+                <input id="u-guidelinesFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                  onChange={(e) => pickGuidelines(e.target.files[0])} aria-describedby="u-guidelinesFile-hint" />
+                {errors.guidelinesFile
+                  ? <p className="field-error" id="u-guidelinesFile-hint" role="alert">{errors.guidelinesFile}</p>
+                  : <p className="hint" id="u-guidelinesFile-hint">If your university gave you guidelines for the thesis, upload them here. PDF, Word, JPG or PNG up to {MAX_GUIDELINES_MB} MB.</p>}
+              </div>
+
+              <Field id="u-instructions" label="Instructions for printing" optional
+                hint="Anything we should know, such as where OHP sheets go, special pages, or your submission rules.">
+                <textarea {...bind('instructions')} rows={3} maxLength={1000} />
+              </Field>
+
+              <ConfidentialityNote />
 
               <h2>Pickup or delivery</h2>
               <fieldset className="field choice-list">
@@ -695,21 +785,14 @@ export default function Upload() {
                   <input {...bind('requiredBy')} type="date" />
                 </Field>
               </div>
-              <Field id="u-instructions" label="Anything else we should know?" optional>
-                <textarea {...bind('instructions')} rows={3} maxLength={1000}
-                  placeholder="e.g. which pages are in colour, where OHP sheets go" />
-              </Field>
+              <p className="hint">If we have any query or find a discrepancy in your file, we will chat with you on WhatsApp or email.</p>
 
               <div className="form-actions">
                 <button type="button" className="btn btn-ghost" onClick={() => back()}>Back</button>
                 <button type="button" className="btn btn-primary btn-lg" onClick={next}>Review your order</button>
               </div>
             </div>
-
-            <aside className="form-aside" aria-label="Your price">
-              <h2 className="aside-title">Your price</h2>
-              {q.valid ? <QuoteBreakdown q={q} p={p} /> : <div className="quote-empty"><p>Enter your total pages to see the price.</p></div>}
-            </aside>
+            {priceAside}
           </div>
         )}
 
@@ -719,8 +802,26 @@ export default function Upload() {
               <h2>Check your order</h2>
               <div className="review-block">
                 <div className="review-head">
-                  <h3>Your details</h3>
+                  <h3>Print options</h3>
                   <button type="button" className="link-btn" onClick={() => back(1)}>Edit</button>
+                </div>
+                <dl className="review-list">
+                  <div>
+                    <dt>Cover</dt>
+                    <dd><span className="swatch-inline" style={{ background: coverById(f.cover).hex }} /> {coverById(f.cover).label}, {letteringLabel(f.lettering).toLowerCase()} lettering</dd>
+                  </div>
+                  {f.thesisTitle && <div><dt>Cover text</dt><dd className="pre">{f.thesisTitle}</dd></div>}
+                  <div><dt>Pages</dt><dd>{q.totalPages}</dd></div>
+                  <div><dt>Copies</dt><dd>{q.copies}</dd></div>
+                  {q.ohp > 0 && <div><dt>OHP sheets</dt><dd>{q.ohp} per copy</dd></div>}
+                  <div><dt>Binding</dt><dd>{bindingLabel(f.binding)}</dd></div>
+                  {f.formatting && <div><dt>Formatting</dt><dd>Yes, {rupees(p.formatting_fee)}</dd></div>}
+                </dl>
+              </div>
+              <div className="review-block">
+                <div className="review-head">
+                  <h3>Your details</h3>
+                  <button type="button" className="link-btn" onClick={() => back(2)}>Edit</button>
                 </div>
                 <dl className="review-list">
                   <div><dt>Name</dt><dd>{f.name}</dd></div>
@@ -728,30 +829,14 @@ export default function Upload() {
                   {f.email && <div><dt>Email</dt><dd>{f.email}</dd></div>}
                   <div><dt>Degree</dt><dd>{f.degree}{f.university ? ', ' + f.university : ''}</dd></div>
                   <div>
-                    <dt>Thesis file</dt>
+                    <dt>{wordFile ? 'Word file' : 'Thesis file'}</dt>
                     <dd>{fileMode === 'link' ? f.fileLink : thesisFile && thesisFile.name + ' (' + formatBytes(thesisFile.size) + ')'}</dd>
                   </div>
-                  {coverFile && <div><dt>Cover page</dt><dd>{coverFile.name}</dd></div>}
-                </dl>
-              </div>
-              <div className="review-block">
-                <div className="review-head">
-                  <h3>Print options</h3>
-                  <button type="button" className="link-btn" onClick={() => back(2)}>Edit</button>
-                </div>
-                <dl className="review-list">
-                  <div><dt>Pages</dt><dd>{q.totalPages} ({q.colourPages} colour, {q.bwPages} B&amp;W)</dd></div>
-                  <div><dt>Copies</dt><dd>{q.copies}</dd></div>
-                  {q.ohp > 0 && <div><dt>OHP sheets</dt><dd>{q.ohp} per copy</dd></div>}
-                  <div>
-                    <dt>Cover</dt>
-                    <dd><span className="swatch-inline" style={{ background: coverById(f.cover).hex }} /> {coverById(f.cover).label}, hardbound, {letteringLabel(f.lettering).toLowerCase()} lettering</dd>
-                  </div>
-                  {f.formatting && <div><dt>Formatting</dt><dd>Yes, {rupees(p.formatting_fee)}</dd></div>}
-                  {f.thesisTitle && <div><dt>Cover text</dt><dd className="pre">{f.thesisTitle}</dd></div>}
+                  {coverFile && f.cover === 'laminated' && <div><dt>Cover design</dt><dd>{coverFile.name}</dd></div>}
+                  {guidelinesFile && <div><dt>Guidelines</dt><dd>{guidelinesFile.name}</dd></div>}
+                  {f.instructions && <div><dt>Instructions</dt><dd className="pre">{f.instructions}</dd></div>}
                   <div><dt>Delivery</dt><dd>{method.label}{f.deliveryMethod !== 'pickup' ? ': ' + f.address : ''}</dd></div>
                   {f.requiredBy && <div><dt>Needed by</dt><dd>{f.requiredBy}</dd></div>}
-                  {f.instructions && <div><dt>Notes</dt><dd className="pre">{f.instructions}</dd></div>}
                 </dl>
               </div>
 
@@ -780,10 +865,7 @@ export default function Upload() {
               <p className="hint">On the next screen you pay online (UPI, card, net banking or wallet). We start printing once payment is received.</p>
             </div>
 
-            <aside className="form-aside" aria-label="Your price">
-              <h2 className="aside-title">Your price</h2>
-              <QuoteBreakdown q={q} p={p} />
-            </aside>
+            {priceAside}
           </div>
         )}
       </div>

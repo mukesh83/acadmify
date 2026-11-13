@@ -20,11 +20,10 @@ export default function Footer() {
 
   const socials = SOCIALS.filter(([key]) => /^https:\/\//.test(c(key)))
   const services = [
-    'Thesis printing (B&W and colour)',
-    'Hardbound binding, gold or silver lettering',
+    'Thesis printing (colour or B&W)',
+    'Hardbound and softbound binding',
     p.formatting_fee > 0 ? 'Thesis formatting' : null,
     'OHP transparent sheets',
-    p.softbound_enabled ? 'Book binding (softbound)' : null,
     'Pickup or delivery in Jodhpur',
   ].filter(Boolean)
 

@@ -67,14 +67,14 @@ export function getPolicy(which, { analytics = false, gstin = '' } = {}) {
       sections: [
         ['Who we are', [operator, 'By placing an order with Acadmify you agree to the following.']],
         ['What we do', [
-          'We print and bind documents that you supply, and deliver them. Thesis orders are printed and hardbound, with gold or silver lettering on the cover and spine. We also offer thesis formatting as a separate paid service, and softbound binding for general books.',
+          'We print and bind documents that you supply, and deliver them. Theses are printed and bound hardbound or softbound, with gold, silver or black lettering on the cover and spine. We also offer thesis formatting (from your Word file) as a separate paid service.',
           'We do not write or research your work, and we do not change its academic content. When you order formatting, we change only the layout and presentation of your document, as agreed with you on WhatsApp.',
         ]],
         ['What you confirm', [
           'You confirm that the document you send is your own work, or that you have the right to have it printed, and that printing it does not breach your institution’s rules or anyone’s copyright.',
         ]],
         ['Orders and prices', [
-          'Prices are shown on this website and in your order summary, with GST shown separately. Your order is confirmed once you have paid for it online. If your file differs from the details you entered (for example a different page count), we tell you on WhatsApp before printing: you pay the difference if it costs more, and we refund the difference if it costs less.',
+          'Prices are shown on this website and in your order summary, with GST shown separately. Online prices apply to theses of 100 or more pages and 5 or more copies; for smaller orders we quote you on WhatsApp or email. Your order is confirmed once you have paid for it online. If your file differs from the details you entered (for example a different page count), we tell you on WhatsApp before printing: you pay the difference if it costs more, and we refund the difference if it costs less.',
         ]],
         ['Your file', [
           'Unless you order formatting, we print exactly the file you supply: we do not change page order, margins, fonts, page size or content. Please check your file carefully before sending it. If you order formatting, please check and approve the formatted version before we print. Reprints caused by errors in a file you supplied or approved are chargeable.',
@@ -146,7 +146,7 @@ export function getPolicy(which, { analytics = false, gstin = '' } = {}) {
           'We send orders across India by courier. Charges depend on weight and destination; we quote them on WhatsApp and you pay them separately before dispatch. Allow 3 to 6 working days for courier transit.',
         ]],
         ['How long it takes', [
-          'Orders are usually ready in 24 to 48 hours after your payment is received. Large orders (several copies, 400+ pages, or colour-heavy) can take longer, and we will tell you on WhatsApp.',
+          'Orders are usually ready in 24 to 48 hours after your payment is received. Large orders (many copies or 400+ pages) can take longer, and we will tell you on WhatsApp.',
         ]],
         ['Tracking', [
           'Your order number looks like ACD-2026-0012. Track it at acadmify.com/track with your order number and the last 4 digits of the phone number you ordered with. We also update you on WhatsApp.',

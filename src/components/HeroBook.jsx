@@ -1,13 +1,13 @@
 // The hardbound thesis drawn in CSS. Tapping a colour swatch recolours the
-// cover and the lettering switch shows gold or silver, so the hero doubles as
-// a preview of the 12 cover colours and both lettering options.
+// cover and the lettering switch shows gold, silver or black, so the hero
+// doubles as a preview of the cover and lettering options.
 import { COVERS, coverById, LETTERING } from '../constants.js'
 
 export function Book({ cover = 'maroon', lettering = 'gold', size = 'lg' }) {
   const year = new Date().getFullYear()
   return (
     <div className={'book-scene book-' + size} aria-hidden="true">
-      <div className={'book' + (lettering === 'silver' ? ' is-silver' : '')} style={{ '--cover': coverById(cover).hex }}>
+      <div className={'book' + (lettering === 'silver' ? ' is-silver' : lettering === 'black' ? ' is-black' : '') + (cover === 'laminated' ? ' is-laminated' : '')} style={{ '--cover': coverById(cover).hex }}>
         <div className="book-face book-front">
           <span className="foil foil-small">A thesis submitted for the degree of</span>
           <span className="foil foil-degree">Doctor of Philosophy</span>
@@ -34,7 +34,7 @@ export function CoverPicker({ value, onChange, legend = 'Cover colour', name = '
       </legend>
       <div className="swatches">
         {COVERS.map((c) => (
-          <label key={c.id} className="swatch" style={{ '--swatch': c.hex }} title={c.label}>
+          <label key={c.id} className={'swatch' + (c.special ? ' swatch-special' : '')} style={{ '--swatch': c.hex }} title={c.label}>
             <input type="radio" name={name} value={c.id} checked={current.id === c.id} onChange={() => onChange(c.id)} />
             <span className="swatch-dot" />
             <span className="sr-only">{c.label}</span>

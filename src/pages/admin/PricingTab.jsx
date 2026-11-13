@@ -6,14 +6,13 @@ import { forgetPricingCache } from '../../lib/usePricing.js'
 import QuoteBreakdown from '../../components/QuoteBreakdown.jsx'
 
 const FIELDS = [
-  ['bw_per_page', 'B&W printing, per page (₹)'],
-  ['color_per_page', 'Colour printing, per page (₹)'],
-  ['colour_bulk_rate', 'Colour bulk rate, per page (₹)'],
-  ['colour_bulk_above', 'Bulk colour rate applies when colour pages × copies is more than'],
+  ['print_per_page', 'Printing, per page (₹)', 'One rate for colour and black & white'],
   ['ohp_per_sheet', 'OHP sheet (₹)'],
   ['hard_binding', 'Hardbound thesis binding, per copy (₹)'],
-  ['soft_binding', 'Softbound book binding, per copy (₹)'],
+  ['soft_binding', 'Softbound thesis binding, per copy (₹)'],
   ['formatting_fee', 'Thesis formatting, per thesis (₹)', '0 = hide the formatting option'],
+  ['min_pages', 'Smallest thesis priced online (pages)', 'Below this, customers are asked to message you for a price'],
+  ['min_copies', 'Smallest order priced online (copies)', 'Below this, customers are asked to message you for a price'],
   ['delivery_charge', 'Doorstep delivery added to the bill (₹)', '0 = customer pays the Rapido rider directly'],
   ['free_delivery_above', 'Free delivery above (₹)', '0 = no free-delivery rule'],
   ['gst_rate', 'GST (%)', 'Check the correct rate for printing/binding with your CA'],
@@ -28,7 +27,7 @@ export default function PricingTab() {
     supabase.from('pricing').select('*').eq('id', 1).maybeSingle().then(({ data, error }) => {
       if (error) setMsg({ kind: 'error', text: 'Could not load prices: ' + error.message })
       const p = normalisePricing(data || {})
-      setForm(Object.fromEntries(Object.keys(DEFAULT_PRICING).map((k) => [k, typeof p[k] === 'boolean' ? p[k] : String(p[k])])))
+      setForm(Object.fromEntries(Object.keys(DEFAULT_PRICING).map((k) => [k, String(p[k])])))
     })
   }, [])
 
@@ -36,8 +35,8 @@ export default function PricingTab() {
 
   const p = normalisePricing(form)
   const examples = [
-    ['200 pages, B&W, 1 copy', calcQuote({ totalPages: 200, copies: 1 }, p)],
-    ['150 pages, 15 colour, 3 copies', calcQuote({ totalPages: 150, colourPages: 15, copies: 3 }, p)],
+    ['200 pages, hardbound, ' + p.min_copies + ' copies', calcQuote({ totalPages: 200, copies: p.min_copies, binding: 'hardbound' }, p)],
+    ['150 pages, softbound, ' + (p.min_copies + 5) + ' copies', calcQuote({ totalPages: 150, copies: p.min_copies + 5, binding: 'softbound' }, p)],
   ]
 
   async function save(e) {
@@ -49,8 +48,8 @@ export default function PricingTab() {
       row[key] = n
     }
     if (row.gst_rate > 28) return setMsg({ kind: 'error', text: 'GST looks too high. Please check it.' })
-    row.colour_bulk_above = Math.round(row.colour_bulk_above)
-    row.softbound_enabled = Boolean(form.softbound_enabled)
+    row.min_pages = Math.round(row.min_pages)
+    row.min_copies = Math.round(row.min_copies)
     row.updated_at = new Date().toISOString()
     setBusy(true)
     const { error } = await supabase.from('pricing').update(row).eq('id', 1)
@@ -74,12 +73,6 @@ export default function PricingTab() {
               {hint && <p className="hint">{hint}</p>}
             </div>
           ))}
-          <div className="field wide">
-            <label className="check">
-              <input type="checkbox" checked={Boolean(form.softbound_enabled)} onChange={(e) => setForm((f) => ({ ...f, softbound_enabled: e.target.checked }))} />
-              <span>Offer book binding (softbound) on the website</span>
-            </label>
-          </div>
         </div>
         <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save prices'}</button>
         {msg && <p className={'admin-msg ' + msg.kind} role="status" style={{ marginTop: '1rem' }}>{msg.text}</p>}
@@ -91,7 +84,7 @@ export default function PricingTab() {
           {examples.map(([title, q]) => (
             <div key={title}>
               <h3>{title}</h3>
-              <QuoteBreakdown q={q} p={p} />
+              <QuoteBreakdown q={q} />
             </div>
           ))}
         </div>

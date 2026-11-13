@@ -275,7 +275,7 @@ main:focus { outline: none; }
 .cover-picker legend { padding: 0; margin-bottom: 0.6rem; color: var(--muted); font-size: 1rem; }
 .cover-picker legend strong { color: var(--ink); }
 .hero-book .cover-picker legend { text-align: center; width: 100%; }
-.swatches { display: grid; grid-template-columns: repeat(6, 40px); gap: 0.55rem; }
+.swatches { display: grid; grid-template-columns: repeat(5, 40px); gap: 0.7rem; }
 .swatch { position: relative; width: 40px; height: 40px; cursor: pointer; }
 .swatch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .swatch-dot {
@@ -306,6 +306,14 @@ main:focus { outline: none; }
 .lettering-dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2); }
 .lettering-gold { background: linear-gradient(135deg, #B8893B, #F0D58C 50%, #C79B45); }
 .lettering-silver { background: linear-gradient(135deg, #8F959B, #F3F5F7 50%, #A9AEB3); }
+.lettering-black { background: #151515; }
+/* Black lettering: plain dark ink, with a faint light edge so it still reads on a black cover */
+.book.is-black .foil { color: #121212; background: none; -webkit-text-fill-color: #121212; filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.35)); }
+.book.is-black .foil-rule { background: linear-gradient(90deg, transparent, #151515, transparent); }
+/* Laminated colour-printed cover: a glossy printed look instead of a plain colour */
+.book.is-laminated { --cover: #2C6E8F; }
+.book.is-laminated .book-front { background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.32) 0, rgba(0, 0, 0, 0.08) 5%, rgba(255, 255, 255, 0.06) 7%, transparent 12%), linear-gradient(150deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.2)), linear-gradient(135deg, #E8A33D 0%, #2C6E8F 55%, #7A1E1E 100%); }
+.swatch-special .swatch-dot { background: linear-gradient(135deg, #E8A33D, #2C6E8F 55%, #7A1E1E); }
 .calc-check { margin: 0.25rem 0 1rem; padding: 0.75rem 0.9rem; border: 1.5px solid var(--line-strong); border-radius: var(--radius); background: var(--paper); }
 .check .hint { display: block; }
 

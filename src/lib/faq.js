@@ -4,7 +4,7 @@ import { calcQuote } from './pricing-core.js'
 import { rupees } from './format.js'
 
 export function buildFaq(p, c) {
-  const example = calcQuote({ totalPages: 200, copies: 1 }, p)
+  const example = calcQuote({ totalPages: 200, copies: p.min_copies, binding: 'hardbound' }, p)
   const gst = p.gst_rate > 0 ? ', and ' + p.gst_rate + '% GST is added' : ''
   const exampleSum = p.gst_rate > 0
     ? rupees(example.subtotal) + ' + ' + rupees(example.gst) + ' GST = ' + rupees(example.total)
@@ -13,10 +13,10 @@ export function buildFaq(p, c) {
   const items = [
     {
       q: 'How much does thesis printing and hardbound binding cost?',
-      a: 'Black & white printing is ' + rupees(p.bw_per_page) + ' per page and colour is ' + rupees(p.color_per_page) +
-        ' per page (' + rupees(p.colour_bulk_rate) + ' per page when you print more than ' + p.colour_bulk_above +
-        ' colour pages in total across all copies). Hardbound binding is ' + rupees(p.hard_binding) + ' per copy' + gst +
-        '. For example, a 200-page black & white thesis, one copy, costs ' + exampleSum + '.',
+      a: 'Printing is ' + rupees(p.print_per_page) + ' per page, colour or black & white, on 100 gsm paper. Hardbound binding is ' +
+        rupees(p.hard_binding) + ' per copy and softbound binding is ' + rupees(p.soft_binding) + ' per copy' + gst +
+        '. These prices apply to theses of ' + p.min_pages + ' or more pages and ' + p.min_copies + ' or more copies. ' +
+        'For example, a 200-page thesis in ' + p.min_copies + ' hardbound copies costs ' + exampleSum + '. For smaller orders, message us for a price.',
     },
     {
       q: 'How long does it take?',
@@ -40,17 +40,17 @@ export function buildFaq(p, c) {
     },
     {
       q: 'What paper, cover colours and lettering do you offer?',
-      a: 'We print on ' + c('paper_spec') + '. Hardbound covers come in twelve colours: maroon, navy, black, forest green, ' +
-        'brown, royal blue, pink, orange, purple, teal, grey and wine, with gold or silver lettering on the cover and spine.',
+      a: 'We print on ' + c('paper_spec') + '. Covers come in maroon, black, orange, red, or a laminated colour-printed cover made from your design, ' +
+        'with gold, silver or black lettering on the cover and spine.',
     },
     p.formatting_fee > 0 ? {
       q: 'Do you format theses?',
-      a: 'Yes. Thesis formatting is ' + rupees(p.formatting_fee) + ' per thesis. Tick “Format my thesis” when you order, or ask on ' +
-        'WhatsApp, and we will agree the details with you. We never write or change the academic content of your work.',
+      a: 'Yes. Thesis formatting is ' + rupees(p.formatting_fee) + ' per thesis, and we need your Word file. Tick “Format my thesis” when you order, ' +
+        'or ask on WhatsApp. We never write or change the academic content of your work.',
     } : null,
     {
-      q: 'My PDF is bigger than 50 MB. What do I do?',
-      a: 'On the upload page, paste a Google Drive (or similar) link instead of uploading the file, or send the file to us on WhatsApp.',
+      q: 'My file is bigger than 50 MB. What do I do?',
+      a: 'On the order page, paste a Google Drive (or similar) link instead of uploading the file, or send the file to us on WhatsApp.',
     },
     {
       q: 'How do I pay?',
@@ -59,14 +59,6 @@ export function buildFaq(p, c) {
         'use the Track page to pay later. If your file turns out to need a different page count, we settle the difference on WhatsApp.',
     },
   ]
-
-  if (p.softbound_enabled) {
-    items.push({
-      q: 'Do you bind books too?',
-      a: 'Yes. Softbound book binding for general books (not theses) is ' + rupees(p.soft_binding) +
-        ' per copy. Bring or send us the pages and we will confirm on WhatsApp.',
-    })
-  }
 
   return items.filter(Boolean)
 }
