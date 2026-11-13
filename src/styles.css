@@ -676,6 +676,9 @@ input[type='file'] { font-size: 1rem; max-width: 100%; }
 .order-block p { margin: 0 0 0.25rem; line-height: 1.4; word-break: break-word; }
 .order-controls { display: grid; gap: 0.5rem; }
 .order-controls label { font-size: 0.95rem; color: var(--muted); display: grid; gap: 0.2rem; }
+.order-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; padding-top: 0.4rem; }
+.btn-danger { background: #fff; color: var(--err); border: 1.5px solid var(--err); }
+.btn-danger:hover { background: var(--err); color: #fff; }
 .order-controls select, .order-controls textarea { min-height: 42px; font-size: 1rem; padding: 0.4rem 0.6rem; }
 .order-links { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
 .due-soon { color: var(--err); font-weight: 600; }

@@ -13,12 +13,12 @@ export class ApiError extends Error {
   }
 }
 
-async function request(path, { method = 'GET', body, timeoutMs = 75000 } = {}) {
+async function request(path, { method = 'GET', body, headers, timeoutMs = 75000 } = {}) {
   let res
   try {
     res = await fetch(API_BASE + path, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: body ? { 'Content-Type': 'application/json', ...headers } : headers,
       body: body ? JSON.stringify(body) : undefined,
       signal: timeoutSignal(timeoutMs),
     })
@@ -62,5 +62,13 @@ export const createPayment = (body) => request('/api/payments/create-order', { m
 
 export const verifyPayment = (details) => request('/api/payments/verify', { method: 'POST', body: details })
 
-export const trackOrder =(orderId, last4) =>
+// Admin only: refund an online payment in full (needs the admin's login token)
+export const refundOrder = (orderId, accessToken) =>
+  request('/api/admin/orders/' + encodeURIComponent(orderId) + '/refund', {
+    method: 'POST',
+    body: {},
+    headers: { Authorization: 'Bearer ' + accessToken },
+  })
+
+export const trackOrder = (orderId, last4) =>
   request('/api/track?order=' + encodeURIComponent(orderId) + '&phone=' + encodeURIComponent(last4))

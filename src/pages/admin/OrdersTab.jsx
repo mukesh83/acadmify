@@ -6,6 +6,7 @@ import { useContent } from '../../lib/content.jsx'
 import { waLink } from '../../lib/whatsapp.js'
 import { rupees, formatDate } from '../../lib/format.js'
 import { coverById, STATUSES, STATUS_LABELS } from '../../constants.js'
+import { refundOrder } from '../../lib/api.js'
 
 const STATUS_COLOURS = {
   received: '#7A1E1E', printing: '#1A5C9B', binding: '#6A1B9A', ready: '#B26A00',
@@ -100,6 +101,43 @@ export default function OrdersTab() {
     setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, ...fields } : x)))
     setNotice({ kind: 'ok', text: o.id + ' saved.' })
     return true
+  }
+
+  async function cancelOrder(o) {
+    if (!window.confirm('Cancel order ' + o.id + ' (' + o.customer_name + ')?' +
+      (o.payment_status === 'paid' ? '\n\nIt is paid. Cancelling does not return the money: use Refund as well.' : ''))) return
+    await update(o, { status: 'cancelled' })
+  }
+
+  async function refund(o) {
+    if (!window.confirm('Refund ' + rupees(o.total_amount) + ' to the customer for order ' + o.id + '?\n\n' +
+      'The full amount goes back to the card, UPI or bank account they paid with. This cannot be undone.')) return
+    setNotice({ kind: 'info', text: 'Refunding ' + o.id + '…' })
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data && data.session && data.session.access_token
+      if (!token) throw new Error('Please sign out and sign in again.')
+      await refundOrder(o.id, token)
+      setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, payment_status: 'refunded' } : x)))
+      setNotice({ kind: 'ok', text: o.id + ' refunded. The customer sees it in 5 to 7 working days.' })
+    } catch (err) {
+      setNotice({ kind: 'error', text: 'Refund failed for ' + o.id + ': ' + err.message })
+    }
+  }
+
+  async function deleteOrder(o) {
+    const unrefunded = o.payment_status === 'paid'
+    if (!window.confirm('PERMANENTLY DELETE order ' + o.id + ' (' + o.customer_name + ')?\n\n' +
+      (unrefunded ? 'WARNING: this order is marked paid and has not been refunded. Deleting does not return any money.\n\n' : '') +
+      'The order, its history and any uploaded files are erased. This cannot be undone.\nTip: Cancel keeps a record; Delete does not.')) return
+    const files = [['thesis-pdfs', o.thesis_pdf_path], ['cover-pages', o.cover_pdf_path]]
+    for (const [bucket, path] of files) {
+      if (path && !o.files_deleted_at) await supabase.storage.from(bucket).remove([path])
+    }
+    const { error: err } = await supabase.from('orders').delete().eq('id', o.id)
+    if (err) return setNotice({ kind: 'error', text: 'Could not delete ' + o.id + ': ' + err.message })
+    setOrders((list) => list.filter((x) => x.id !== o.id))
+    setNotice({ kind: 'ok', text: o.id + ' deleted.' })
   }
 
   async function cleanupOldFiles() {
@@ -200,14 +238,14 @@ export default function OrdersTab() {
         <p>No orders here.</p>
       ) : (
         <div className="order-list">
-          {shown.map((o) => <OrderCard key={o.id} o={o} c={c} onUpdate={update} />)}
+          {shown.map((o) => <OrderCard key={o.id} o={o} c={c} onUpdate={update} onCancel={cancelOrder} onRefund={refund} onDelete={deleteOrder} />)}
         </div>
       )}
     </div>
   )
 }
 
-function OrderCard({ o, c, onUpdate }) {
+function OrderCard({ o, c, onUpdate, onCancel, onRefund, onDelete }) {
   const [notes, setNotes] = useState(o.notes || '')
   const [history, setHistory] = useState(null)
   const cover = coverById(o.cover_colour)
@@ -311,6 +349,15 @@ function OrderCard({ o, c, onUpdate }) {
           {notes !== (o.notes || '') && (
             <button type="button" className="btn btn-primary btn-sm" onClick={() => onUpdate(o, { notes })}>Save notes</button>
           )}
+          <div className="order-actions">
+            {o.status !== 'cancelled' && (
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => onCancel(o)}>Cancel order</button>
+            )}
+            {o.payment_status === 'paid' && (
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => onRefund(o)}>Refund {rupees(o.total_amount)}</button>
+            )}
+            <button type="button" className="btn btn-danger btn-sm" onClick={() => onDelete(o)}>Delete order</button>
+          </div>
           {history === null ? (
             <button type="button" className="link-btn" onClick={loadHistory}>Show history</button>
           ) : (
