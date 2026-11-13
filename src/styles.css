@@ -662,6 +662,20 @@ input[type='file'] { font-size: 1rem; max-width: 100%; }
 .chip[aria-pressed='true'] { background: var(--maroon); border-color: var(--maroon); color: #fff; }
 
 .order-list { display: grid; gap: 0.9rem; }
+.bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; padding: 0.6rem 0.9rem; margin-bottom: 0.6rem; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); position: sticky; top: 0; z-index: 2; }
+.bulk-bar .check { align-items: center; font-weight: 600 !important; }
+.bulk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-left: auto; }
+.bulk-actions select { min-height: 36px; padding: 0.2rem 0.5rem; }
+.order-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.order-row { background: var(--paper); border: 1px solid var(--line); border-left: 5px solid var(--status, var(--maroon)); border-radius: var(--radius); }
+.order-row.is-open { border-color: var(--maroon); }
+.order-row-head { display: flex; align-items: center; gap: 0.8rem; padding: 0.55rem 0.9rem; --status: var(--maroon); }
+.order-row-head > input { width: 1.3rem; height: 1.3rem; accent-color: var(--maroon); flex-shrink: 0; }
+.order-row-main { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.8rem; background: none; border: 0; padding: 0.2rem 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.order-row-main .order-no { font-weight: 600; color: var(--maroon); font-variant-numeric: lining-nums tabular-nums; }
+.order-row-name { flex: 1; min-width: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.order-row-main .order-total { margin-left: auto; font-weight: 600; font-variant-numeric: lining-nums; }
+.order-row .order-card { border: 0; border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); }
 .order-card { background: var(--paper); border: 1px solid var(--line); border-left: 5px solid var(--status, var(--maroon)); border-radius: var(--radius-lg); padding: 1rem 1.1rem; }
 .order-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.8rem; margin-bottom: 0.6rem; }
 .order-top .order-no { font-size: 1.25rem; font-weight: 600; color: var(--maroon); font-variant-numeric: lining-nums tabular-nums; }

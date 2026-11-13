@@ -72,6 +72,10 @@ export default function OrdersTab() {
   const [notice, setNotice] = useState(null)
   const [filter, setFilter] = useState('active')
   const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState(() => new Set())
+  const [openId, setOpenId] = useState(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkStatusValue, setBulkStatusValue] = useState('')
 
   async function load() {
     setLoading(true)
@@ -103,26 +107,74 @@ export default function OrdersTab() {
     return true
   }
 
+  // Core actions (no prompts). Each returns an error message, or '' on success.
+  async function doCancel(o) {
+    const { error: err } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', o.id)
+    if (err) return err.message
+    setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, status: 'cancelled' } : x)))
+    return ''
+  }
+
+  async function doRefund(o) {
+    try {
+      const { data } = await supabase.auth.getSession()
+      const token = data && data.session && data.session.access_token
+      if (!token) return 'Please sign out and sign in again.'
+      await refundOrder(o.id, token)
+      setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, payment_status: 'refunded' } : x)))
+      return ''
+    } catch (err) {
+      return err.message
+    }
+  }
+
+  async function doDelete(o) {
+    const files = [['thesis-pdfs', o.thesis_pdf_path], ['cover-pages', o.cover_pdf_path]]
+    for (const [bucket, path] of files) {
+      if (path && !o.files_deleted_at) await supabase.storage.from(bucket).remove([path])
+    }
+    const { error: err } = await supabase.from('orders').delete().eq('id', o.id)
+    if (err) return err.message
+    setOrders((list) => list.filter((x) => x.id !== o.id))
+    setSelected((sel) => {
+      const next = new Set(sel)
+      next.delete(o.id)
+      return next
+    })
+    return ''
+  }
+
+  // Runs one action over many orders and reports what happened.
+  async function runBulk(list, verb, fn) {
+    setBulkBusy(true)
+    const failed = []
+    for (const o of list) {
+      const msg = await fn(o)
+      if (msg) failed.push(o.id + ' (' + msg + ')')
+    }
+    setBulkBusy(false)
+    const done = list.length - failed.length
+    setNotice({
+      kind: failed.length ? 'error' : 'ok',
+      text: done + ' order(s) ' + verb + '.' + (failed.length ? ' Could not do ' + failed.length + ': ' + failed.join('; ') : ''),
+    })
+  }
+
   async function cancelOrder(o) {
     if (!window.confirm('Cancel order ' + o.id + ' (' + o.customer_name + ')?' +
       (o.payment_status === 'paid' ? '\n\nIt is paid. Cancelling does not return the money: use Refund as well.' : ''))) return
-    await update(o, { status: 'cancelled' })
+    const msg = await doCancel(o)
+    setNotice(msg ? { kind: 'error', text: 'Could not cancel ' + o.id + ': ' + msg } : { kind: 'ok', text: o.id + ' cancelled.' })
   }
 
   async function refund(o) {
     if (!window.confirm('Refund ' + rupees(o.total_amount) + ' to the customer for order ' + o.id + '?\n\n' +
       'The full amount goes back to the card, UPI or bank account they paid with. This cannot be undone.')) return
     setNotice({ kind: 'info', text: 'Refunding ' + o.id + '…' })
-    try {
-      const { data } = await supabase.auth.getSession()
-      const token = data && data.session && data.session.access_token
-      if (!token) throw new Error('Please sign out and sign in again.')
-      await refundOrder(o.id, token)
-      setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, payment_status: 'refunded' } : x)))
-      setNotice({ kind: 'ok', text: o.id + ' refunded. The customer sees it in 5 to 7 working days.' })
-    } catch (err) {
-      setNotice({ kind: 'error', text: 'Refund failed for ' + o.id + ': ' + err.message })
-    }
+    const msg = await doRefund(o)
+    setNotice(msg
+      ? { kind: 'error', text: 'Refund failed for ' + o.id + ': ' + msg }
+      : { kind: 'ok', text: o.id + ' refunded. The customer sees it in 5 to 7 working days.' })
   }
 
   async function deleteOrder(o) {
@@ -130,14 +182,48 @@ export default function OrdersTab() {
     if (!window.confirm('PERMANENTLY DELETE order ' + o.id + ' (' + o.customer_name + ')?\n\n' +
       (unrefunded ? 'WARNING: this order is marked paid and has not been refunded. Deleting does not return any money.\n\n' : '') +
       'The order, its history and any uploaded files are erased. This cannot be undone.\nTip: Cancel keeps a record; Delete does not.')) return
-    const files = [['thesis-pdfs', o.thesis_pdf_path], ['cover-pages', o.cover_pdf_path]]
-    for (const [bucket, path] of files) {
-      if (path && !o.files_deleted_at) await supabase.storage.from(bucket).remove([path])
-    }
-    const { error: err } = await supabase.from('orders').delete().eq('id', o.id)
-    if (err) return setNotice({ kind: 'error', text: 'Could not delete ' + o.id + ': ' + err.message })
-    setOrders((list) => list.filter((x) => x.id !== o.id))
-    setNotice({ kind: 'ok', text: o.id + ' deleted.' })
+    const msg = await doDelete(o)
+    setNotice(msg ? { kind: 'error', text: 'Could not delete ' + o.id + ': ' + msg } : { kind: 'ok', text: o.id + ' deleted.' })
+  }
+
+  const chosen = () => orders.filter((o) => selected.has(o.id))
+
+  async function bulkStatus(status) {
+    const list = chosen().filter((o) => o.status !== status)
+    if (!list.length) return setNotice({ kind: 'info', text: 'Those orders already have that status.' })
+    if (!window.confirm('Set ' + list.length + ' order(s) to "' + STATUS_LABELS[status] + '"?')) return
+    await runBulk(list, 'set to ' + STATUS_LABELS[status], async (o) => {
+      const { error: err } = await supabase.from('orders').update({ status }).eq('id', o.id)
+      if (err) return err.message
+      setOrders((l) => l.map((x) => (x.id === o.id ? { ...x, status } : x)))
+      return ''
+    })
+  }
+
+  async function bulkCancel() {
+    const list = chosen().filter((o) => o.status !== 'cancelled')
+    if (!list.length) return setNotice({ kind: 'info', text: 'Those orders are already cancelled.' })
+    const paid = list.filter((o) => o.payment_status === 'paid').length
+    if (!window.confirm('Cancel ' + list.length + ' order(s)?' + (paid ? '\n\n' + paid + ' of them are paid. Cancelling does not return money: use Refund as well.' : ''))) return
+    await runBulk(list, 'cancelled', doCancel)
+  }
+
+  async function bulkRefund() {
+    const list = chosen().filter((o) => o.payment_status === 'paid')
+    if (!list.length) return setNotice({ kind: 'info', text: 'None of the selected orders are paid, so there is nothing to refund.' })
+    const total = list.reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
+    if (!window.confirm('Refund ' + list.length + ' paid order(s), ' + rupees(total) + ' in total, back to the customers?\n\n' +
+      'Each full amount goes back to the card, UPI or bank account that paid. This cannot be undone.')) return
+    await runBulk(list, 'refunded', doRefund)
+  }
+
+  async function bulkDelete() {
+    const list = chosen()
+    const unrefunded = list.filter((o) => o.payment_status === 'paid').length
+    if (!window.confirm('PERMANENTLY DELETE ' + list.length + ' order(s)?\n\n' +
+      (unrefunded ? 'WARNING: ' + unrefunded + ' of them are marked paid and not refunded. Deleting does not return any money.\n\n' : '') +
+      'The orders, their history and any uploaded files are erased. This cannot be undone.')) return
+    await runBulk(list, 'deleted', doDelete)
   }
 
   async function cleanupOldFiles() {
@@ -199,6 +285,21 @@ export default function OrdersTab() {
     )
   })
 
+  const selectedShown = shown.filter((o) => selected.has(o.id))
+  const allShownSelected = shown.length > 0 && selectedShown.length === shown.length
+  const toggleOne = (id) => setSelected((sel) => {
+    const next = new Set(sel)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    return next
+  })
+  const toggleAll = () => setSelected((sel) => {
+    const next = new Set(sel)
+    if (allShownSelected) shown.forEach((o) => next.delete(o.id))
+    else shown.forEach((o) => next.add(o.id))
+    return next
+  })
+
   if (loading) return <p>Loading orders…</p>
   if (error) {
     return (
@@ -237,9 +338,44 @@ export default function OrdersTab() {
       {shown.length === 0 ? (
         <p>No orders here.</p>
       ) : (
-        <div className="order-list">
-          {shown.map((o) => <OrderCard key={o.id} o={o} c={c} onUpdate={update} onCancel={cancelOrder} onRefund={refund} onDelete={deleteOrder} />)}
-        </div>
+        <>
+          <div className="bulk-bar">
+            <label className="check">
+              <input type="checkbox" checked={allShownSelected} onChange={toggleAll} />
+              <span>{selectedShown.length ? selectedShown.length + ' selected' : 'Select all (' + shown.length + ')'}</span>
+            </label>
+            {selectedShown.length > 0 && (
+              <div className="bulk-actions">
+                <select value={bulkStatusValue} disabled={bulkBusy} aria-label="Set status of selected orders"
+                  onChange={(e) => { const v = e.target.value; setBulkStatusValue(''); if (v) bulkStatus(v) }}>
+                  <option value="">Set status…</option>
+                  {STATUSES.map((st) => <option key={st} value={st}>{STATUS_LABELS[st]}</option>)}
+                </select>
+                <button type="button" className="btn btn-outline btn-sm" disabled={bulkBusy} onClick={bulkCancel}>Cancel</button>
+                <button type="button" className="btn btn-outline btn-sm" disabled={bulkBusy} onClick={bulkRefund}>Refund</button>
+                <button type="button" className="btn btn-danger btn-sm" disabled={bulkBusy} onClick={bulkDelete}>Delete</button>
+                <button type="button" className="link-btn" onClick={() => setSelected(new Set())}>Clear</button>
+              </div>
+            )}
+          </div>
+          <ul className="order-rows">
+            {shown.map((o) => (
+              <li key={o.id} className={'order-row' + (openId === o.id ? ' is-open' : '')}>
+                <div className="order-row-head" style={{ '--status': STATUS_COLOURS[o.status] || '#7A1E1E' }}>
+                  <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggleOne(o.id)} aria-label={'Select ' + o.id} />
+                  <button type="button" className="order-row-main" aria-expanded={openId === o.id} onClick={() => setOpenId(openId === o.id ? null : o.id)}>
+                    <span className="order-no">{o.id}</span>
+                    <span className="order-row-name">{o.customer_name}</span>
+                    <span className="badge">{STATUS_LABELS[o.status] || o.status}</span>
+                    <span className={'badge ' + (o.payment_status === 'paid' ? 'ok' : o.payment_status === 'failed' ? 'err' : 'warn')}>{o.payment_status}</span>
+                    <span className="order-total">{rupees(o.total_amount)}</span>
+                  </button>
+                </div>
+                {openId === o.id && <OrderCard o={o} c={c} onUpdate={update} onCancel={cancelOrder} onRefund={refund} onDelete={deleteOrder} />}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   )
