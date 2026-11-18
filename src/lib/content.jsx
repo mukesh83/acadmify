@@ -22,7 +22,7 @@ export const CONTENT_DEFAULTS = {
   hero_stat2_label: 'Usual turnaround',
   hero_stat3_value: '₹5',
   hero_stat3_label: 'Per printed page',
-  hero_stat4_value: '5',
+  hero_stat4_value: '7',
   hero_stat4_label: 'Cover choices',
 
   about_heading: 'About Acadmify',

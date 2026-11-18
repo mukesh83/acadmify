@@ -275,7 +275,8 @@ main:focus { outline: none; }
 .cover-picker legend { padding: 0; margin-bottom: 0.6rem; color: var(--muted); font-size: 1rem; }
 .cover-picker legend strong { color: var(--ink); }
 .hero-book .cover-picker legend { text-align: center; width: 100%; }
-.swatches { display: grid; grid-template-columns: repeat(5, 40px); gap: 0.7rem; }
+.swatches { display: flex; flex-wrap: wrap; gap: 0.6rem; max-width: 22rem; }
+.hero-book .swatches { justify-content: center; margin-inline: auto; }
 .swatch { position: relative; width: 40px; height: 40px; cursor: pointer; }
 .swatch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .swatch-dot {
@@ -299,9 +300,10 @@ main:focus { outline: none; }
 .book.is-silver .foil-rule { background: linear-gradient(90deg, transparent, #D9DCDF, transparent); }
 .lettering-picker { border: 0; margin: 0; padding: 0; min-width: 0; }
 .lettering-picker legend { padding: 0; margin-bottom: 0.4rem; color: var(--muted); font-size: 1rem; }
-.hero-book .lettering-picker { width: min(100%, 17rem); }
+.hero-book .lettering-picker { width: min(100%, 22rem); }
 .hero-book .lettering-picker legend { text-align: center; width: 100%; }
 .segmented-sm { margin: 0; }
+.segmented.segmented-sm { grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); }
 .segmented-sm label { min-height: 42px; gap: 0.45rem; }
 .lettering-dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2); }
 .lettering-gold { background: linear-gradient(135deg, #B8893B, #F0D58C 50%, #C79B45); }

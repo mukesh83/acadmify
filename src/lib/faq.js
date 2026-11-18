@@ -40,7 +40,7 @@ export function buildFaq(p, c) {
     },
     {
       q: 'What paper, cover colours and lettering do you offer?',
-      a: 'We print on ' + c('paper_spec') + '. Covers come in maroon, black, orange, red, or a laminated colour-printed cover made from your design, ' +
+      a: 'We print on ' + c('paper_spec') + '. Covers come in maroon, black, navy blue, light blue, orange, red, or a laminated colour-printed cover made from your design, ' +
         'with gold, silver or black lettering on the cover and spine.',
     },
     p.formatting_fee > 0 ? {

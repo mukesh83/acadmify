@@ -19,6 +19,8 @@ export const BUSINESS = {
 export const COVERS = [
   { id: 'maroon', label: 'Maroon', hex: '#7A1E1E' },
   { id: 'black', label: 'Black', hex: '#2A2020' },
+  { id: 'navy', label: 'Navy blue', hex: '#1B2F5C' },
+  { id: 'lightblue', label: 'Light blue', hex: '#1E8FE0' },
   { id: 'orange', label: 'Orange', hex: '#E65100' },
   { id: 'red', label: 'Red', hex: '#B71C1C' },
   { id: 'laminated', label: 'Laminated colour-printed cover', hex: '#2C6E8F', special: true },
